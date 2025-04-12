@@ -1,3 +1,7 @@
 Me wake up one day...me cookie gone
 Me run class early
+<<<<<<< HEAD
 Me stuck doing GitHub so me don't know want to do
+=======
+Me shower rarely
+>>>>>>> bf4ef24 (Add new story in main branch.)
