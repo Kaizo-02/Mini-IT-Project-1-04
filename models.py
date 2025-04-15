@@ -1,78 +1,122 @@
 import sqlite3
-from database import create_connection
 
-# --- Users ---
-def add_user(username, email, password):
-    conn = create_connection()
-    cursor = conn.cursor()
+def create_connection():
+    """Create a connection to the SQLite database."""
+    connection = sqlite3.connect('mydatabase.db')
+    return connection
+
+def create_tables():
+    """Create the necessary tables in the database if they don't already exist."""
+    connection = create_connection()
+    cursor = connection.cursor()
+
+    # Create table for goals
     cursor.execute('''
-        INSERT INTO users (username, email, password)
-        VALUES (?, ?, ?)
+    CREATE TABLE IF NOT EXISTS goals (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        goal_name TEXT NOT NULL,
+        goal_description TEXT,
+        goal_due_date TEXT,
+        goal_priority TEXT,
+        FOREIGN KEY(user_id) REFERENCES users(id)
+    )''')
+
+    # Create table for habits
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS habits (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        habit_name TEXT NOT NULL,
+        habit_description TEXT,
+        habit_frequency TEXT,
+        FOREIGN KEY(user_id) REFERENCES users(id)
+    )''')
+
+    # Create table for users (if not already created)
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL,
+        email TEXT NOT NULL UNIQUE,
+        password TEXT NOT NULL
+    )''')
+
+    connection.commit()
+    connection.close()
+
+def add_user(username, email, password):
+    """Add a new user to the database."""
+    connection = create_connection()
+    cursor = connection.cursor()
+
+    cursor.execute('''
+    INSERT INTO users (username, email, password)
+    VALUES (?, ?, ?)
     ''', (username, email, password))
-    conn.commit()
-    conn.close()
+
+    connection.commit()
+    connection.close()
 
 def get_all_users():
-    conn = create_connection()
-    cursor = conn.cursor()
+    """Get all users from the database."""
+    connection = create_connection()
+    cursor = connection.cursor()
+
     cursor.execute('SELECT * FROM users')
     users = cursor.fetchall()
-    conn.close()
+
+    connection.close()
     return users
 
-# --- Goals ---
-def add_goal(user_id, title, description, due_date, priority):
-    conn = create_connection()
-    cursor = conn.cursor()
+def add_goal(user_id, goal_name, goal_description, goal_due_date, goal_priority):
+    """Add a new goal to the database."""
+    connection = create_connection()
+    cursor = connection.cursor()
+
     cursor.execute('''
-        INSERT INTO goals (user_id, title, description, due_date, priority)
-        VALUES (?, ?, ?, ?, ?)
-    ''', (user_id, title, description, due_date, priority))
-    conn.commit()
-    conn.close()
+    INSERT INTO goals (user_id, goal_name, goal_description, goal_due_date, goal_priority)
+    VALUES (?, ?, ?, ?, ?)
+    ''', (user_id, goal_name, goal_description, goal_due_date, goal_priority))
+
+    connection.commit()
+    connection.close()
 
 def get_goals_by_user(user_id):
-    conn = create_connection()
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM goals WHERE user_id = ?', (user_id,))
+    """Get all goals for a specific user."""
+    connection = create_connection()
+    cursor = connection.cursor()
+
+    cursor.execute('''
+    SELECT * FROM goals WHERE user_id = ?
+    ''', (user_id,))
     goals = cursor.fetchall()
-    conn.close()
+
+    connection.close()
     return goals
 
-# --- Tasks ---
-def add_task(goal_id, task_name):
-    conn = create_connection()
-    cursor = conn.cursor()
-    cursor.execute('''
-        INSERT INTO tasks (goal_id, task_name)
-        VALUES (?, ?)
-    ''', (goal_id, task_name))
-    conn.commit()
-    conn.close()
+def add_habit(user_id, habit_name, habit_description, habit_frequency):
+    """Add a new habit to the database."""
+    connection = create_connection()
+    cursor = connection.cursor()
 
-def get_tasks_by_goal(goal_id):
-    conn = create_connection()
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM tasks WHERE goal_id = ?', (goal_id,))
-    tasks = cursor.fetchall()
-    conn.close()
-    return tasks
-
-# --- Habits ---
-def add_habit(user_id, habit_name, preferred_time=None):
-    conn = create_connection()
-    cursor = conn.cursor()
     cursor.execute('''
-        INSERT INTO habits (user_id, habit_name, preferred_time)
-        VALUES (?, ?, ?)
-    ''', (user_id, habit_name, preferred_time))
-    conn.commit()
-    conn.close()
+    INSERT INTO habits (user_id, habit_name, habit_description, habit_frequency)
+    VALUES (?, ?, ?, ?)
+    ''', (user_id, habit_name, habit_description, habit_frequency))
+
+    connection.commit()
+    connection.close()
 
 def get_habits_by_user(user_id):
-    conn = create_connection()
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM habits WHERE user_id = ?', (user_id,))
+    """Get all habits for a specific user."""
+    connection = create_connection()
+    cursor = connection.cursor()
+
+    cursor.execute('''
+    SELECT * FROM habits WHERE user_id = ?
+    ''', (user_id,))
     habits = cursor.fetchall()
-    conn.close()
+
+    connection.close()
     return habits

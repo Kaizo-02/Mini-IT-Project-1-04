@@ -10,7 +10,6 @@ def create_tables():
     conn = create_connection()
     cursor = conn.cursor()
 
-    # Create 'users' table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -21,7 +20,6 @@ def create_tables():
         )
     ''')
 
-    # Create 'goals' table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS goals (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
