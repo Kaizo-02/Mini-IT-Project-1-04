@@ -43,7 +43,7 @@ def create_tables():
 	    start_time	TEXT NOT NULL,
 	    end_time TEXT NOT NULL,
 	    duration INTEGER NOT NULL,
-	    completed INTEGER NOT NULL DEFAULT 1,
+	    completed INTEGER NOT NULL DEFAULT 1
         )
     ''')
 
