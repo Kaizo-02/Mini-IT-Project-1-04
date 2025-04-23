@@ -154,7 +154,7 @@ class PomodoroApp(ctk.CTk):
         self.timer_label.configure(text=self._format_time(self.time_left))
         self.status_label.configure(text=f"{name} starting...")
 
-    def _update_session_label(self):
+    def _update_session_label(self): # update session label based on current session (Work session or Break)
         name = self.sessions[self.session_index][0]
         if name == "Work":
             self.session_label.configure(text="Work Session", text_color="#2E86C1")
