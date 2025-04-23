@@ -4,14 +4,14 @@ import customtkinter as ctk
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
-class PomodoroApp(ctk.CTk): #arifs coding
+class PomodoroApp(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("IMPROVE - MAKE LIFE BETTER")
         self.geometry("1920x1080")
         self.resizable(True, True)
 
-        # 2) Header (Arifs coding)
+        # 2) Header
         header = ctk.CTkFrame(master=self, height=80, fg_color="white")
         header.pack(side="top", fill="x")
         ctk.CTkLabel(
@@ -22,7 +22,7 @@ class PomodoroApp(ctk.CTk): #arifs coding
             font=("Inter", 70, "bold")
         ).place(relx=0.5, rely=0.5, anchor="center")
 
-        # 3) Sidebar (arifs coding)
+        # 3) Sidebar
         sidebar = ctk.CTkFrame(master=self, width=200, fg_color="red")
         sidebar.pack(side="left", fill="y")
         for name in ["Home", "Goal Planner", "Habit builder", "Pomodoro timer"]:
@@ -46,6 +46,7 @@ class PomodoroApp(ctk.CTk): #arifs coding
         self.session_index = 0
         self.time_left = self.sessions[self.session_index][1]
         self.running = False
+        self.session_counter = 0  # count completed work sessions
 
         # 6) Pomodoro UI in 'content'
         self.session_label = ctk.CTkLabel(
@@ -64,17 +65,25 @@ class PomodoroApp(ctk.CTk): #arifs coding
         )
         self.timer_label.pack(pady=20)
 
+        # Session counter display
+        self.counter_label = ctk.CTkLabel(
+            master=content,
+            text=f"Sessions Completed: {self.session_counter}",
+            font=("Inter", 24),
+            text_color="#555555"
+        )
+        self.counter_label.pack(pady=10)
+
         # Button frame for Start/Reset side by side
         btn_frame = ctk.CTkFrame(master=content, fg_color="transparent")
         btn_frame.pack(pady=20)
 
-        # start and reset buttons
         self.start_button = ctk.CTkButton(
             master=btn_frame,
             text="Start",
             width=300,
             height=100,
-            font=("Inter", 50, "bold"),
+            font=("Inter", 30, "bold"),
             fg_color="#A3A1A1",
             hover_color="#8F8D8D",
             text_color="white",
@@ -87,7 +96,7 @@ class PomodoroApp(ctk.CTk): #arifs coding
             text="Reset",
             width=300,
             height=100,
-            font=("Inter", 50, "bold"),
+            font=("Inter", 30, "bold"),
             fg_color="#A3A1A1",
             hover_color="#8F8D8D",
             text_color="white",
@@ -131,6 +140,13 @@ class PomodoroApp(ctk.CTk): #arifs coding
         self._update_session_label()
 
     def _switch_session(self):
+        # increment counter when finishing a work session
+        if self.sessions[self.session_index][0] == "Work":
+            self.session_counter += 1
+            self.counter_label.configure(
+                text=f"Sessions Completed: {self.session_counter}"
+            )
+        # switch to next session
         self.session_index = (self.session_index + 1) % len(self.sessions)
         name, duration = self.sessions[self.session_index]
         self.time_left = duration
