@@ -37,18 +37,17 @@ class PomodoroApp(ctk.CTk):
                 command=lambda t=name: self.on_menu(t)
             ).pack(pady=(20, 0), padx=10, fill="x")
 
-        # 4) Main content area
         content = ctk.CTkFrame(master=self, fg_color="white")
         content.pack(side="left", fill="both", expand=True, padx=20, pady=20)
 
-        # 5) Pomodoro settings & state
+        
         self.sessions = [("Work", 25 * 60), ("Break", 5 * 60)]
         self.session_index = 0
         self.time_left = self.sessions[self.session_index][1]
         self.running = False
         self.session_counter = 0  # count completed work sessions
 
-        # 6) Pomodoro UI in 'content'
+   
         self.session_label = ctk.CTkLabel(
             master=content,
             text="Work Session",
@@ -65,7 +64,7 @@ class PomodoroApp(ctk.CTk):
         )
         self.timer_label.pack(pady=20)
 
-        # Session counter display
+       
         self.counter_label = ctk.CTkLabel(
             master=content,
             text=f"Sessions Completed: {self.session_counter}",
@@ -140,13 +139,13 @@ class PomodoroApp(ctk.CTk):
         self._update_session_label()
 
     def _switch_session(self):
-        # increment counter when finishing a work session
+        
         if self.sessions[self.session_index][0] == "Work":
             self.session_counter += 1
             self.counter_label.configure(
                 text=f"Sessions Completed: {self.session_counter}"
             )
-        # switch to next session
+       
         self.session_index = (self.session_index + 1) % len(self.sessions)
         name, duration = self.sessions[self.session_index]
         self.time_left = duration
