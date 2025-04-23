@@ -1,117 +1,153 @@
 import customtkinter as ctk
 
-# 1) Appearance & theme
+# 1) Global appearance
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
-class PomodoroApp(ctk.CTk):
+class PomodoroApp(ctk.CTk): #arifs coding
     def __init__(self):
         super().__init__()
-        self.title("Pomodoro Timer")
-        # 2) Resize window
+        self.title("IMPROVE - MAKE LIFE BETTER")
         self.geometry("1920x1080")
-        self.resizable(False, False)
+        self.resizable(True, True)
 
-        # Pomodoro Settings
+        # 2) Header (Arifs coding)
+        header = ctk.CTkFrame(master=self, height=80, fg_color="white")
+        header.pack(side="top", fill="x")
+        ctk.CTkLabel(
+            master=header,
+            text="IMPROVE - MAKE LIFE BETTER",
+            fg_color="red",
+            text_color="white",
+            font=("Inter", 70, "bold")
+        ).place(relx=0.5, rely=0.5, anchor="center")
+
+        # 3) Sidebar (arifs coding)
+        sidebar = ctk.CTkFrame(master=self, width=200, fg_color="red")
+        sidebar.pack(side="left", fill="y")
+        for name in ["Home", "Goal Planner", "Habit builder", "Pomodoro timer"]:
+            ctk.CTkButton(
+                master=sidebar,
+                text=name,
+                fg_color="lightgray",
+                hover_color="#d3d3d3",
+                text_color="black",
+                font=("Arial", 14, "bold"),
+                border_width=2,
+                command=lambda t=name: self.on_menu(t)
+            ).pack(pady=(20, 0), padx=10, fill="x")
+
+        # 4) Main content area
+        content = ctk.CTkFrame(master=self, fg_color="white")
+        content.pack(side="left", fill="both", expand=True, padx=20, pady=20)
+
+        # 5) Pomodoro settings & state
         self.sessions = [("Work", 25 * 60), ("Break", 5 * 60)]
         self.session_index = 0
         self.time_left = self.sessions[self.session_index][1]
         self.running = False
 
-        # --- UI with per-widget styling ---
+        # 6) Pomodoro UI in 'content'
         self.session_label = ctk.CTkLabel(
-            master=self,
+            master=content,
             text="Work Session",
-            font=("inter", 150),
-            text_color="#A3A1A1"            # custom text color
+            font=("Inter", 150),
+            text_color="#2E86C1"
         )
         self.session_label.pack(pady=30)
 
         self.timer_label = ctk.CTkLabel(
-            master=self,
-            text=self.format_time(self.time_left),
-            font=("inter", 180),
-            text_color="#A3A1A1"            # custom text color
+            master=content,
+            text=self._format_time(self.time_left),
+            font=("Inter", 200),
+            text_color="#A3A1A1"
         )
         self.timer_label.pack(pady=20)
 
-        self.start_button = ctk.CTkButton(
-            master=self,
-            text="Start",
-            command=self.start_timer,
-            width=200,
-            fg_color="#A3A1A1",             # button background
-            hover_color="#8F8D8D",          # darker on hover
-            text_color="white"
-        )
-        self.start_button.pack(pady=15)
+        # Button frame for Start/Reset side by side
+        btn_frame = ctk.CTkFrame(master=content, fg_color="transparent")
+        btn_frame.pack(pady=20)
 
-        self.reset_button = ctk.CTkButton(
-            master=self,
-            text="Reset",
-            command=self.reset_timer,
-            width=200,
+        # start and reset buttons
+        self.start_button = ctk.CTkButton(
+            master=btn_frame,
+            text="Start",
+            width=300,
+            height=100,
+            font=("Inter", 50, "bold"),
             fg_color="#A3A1A1",
             hover_color="#8F8D8D",
-            text_color="white"
+            text_color="white",
+            command=self.start_timer
         )
-        self.reset_button.pack(pady=15)
+        self.start_button.pack(side="left", padx=20)
+
+        self.reset_button = ctk.CTkButton(
+            master=btn_frame,
+            text="Reset",
+            width=300,
+            height=100,
+            font=("Inter", 50, "bold"),
+            fg_color="#A3A1A1",
+            hover_color="#8F8D8D",
+            text_color="white",
+            command=self.reset_timer
+        )
+        self.reset_button.pack(side="left", padx=20)
 
         self.status_label = ctk.CTkLabel(
-            master=self,
+            master=content,
             text="Ready",
-            font=("Helvetica", 14),
-            text_color="#888888"            # lighter gray
+            font=("Inter", 20),
+            text_color="#888888"
         )
         self.status_label.pack(pady=10)
 
-    def format_time(self, seconds):
-        mins, secs = divmod(seconds, 60)
-        return f"{mins:02d}:{secs:02d}"
+    def _format_time(self, seconds):
+        m, s = divmod(seconds, 60)
+        return f"{m:02d}:{s:02d}"
 
     def start_timer(self):
         if not self.running:
             self.running = True
             self.status_label.configure(text="Running...")
-            self.countdown()
+            self._countdown()
 
-    def countdown(self):
+    def _countdown(self):
         if self.running and self.time_left > 0:
             self.time_left -= 1
-            self.timer_label.configure(text=self.format_time(self.time_left))
-            self.after(1000, self.countdown)
+            self.timer_label.configure(text=self._format_time(self.time_left))
+            self.after(1000, self._countdown)
         elif self.running:
             self.running = False
             self.status_label.configure(text="Session Complete!")
-            self.switch_session()
+            self._switch_session()
 
     def reset_timer(self):
         self.running = False
         self.time_left = self.sessions[self.session_index][1]
-        self.timer_label.configure(text=self.format_time(self.time_left))
+        self.timer_label.configure(text=self._format_time(self.time_left))
         self.status_label.configure(text="Reset")
-        self.update_session_label()
+        self._update_session_label()
 
-    def switch_session(self):
+    def _switch_session(self):
         self.session_index = (self.session_index + 1) % len(self.sessions)
-        session_name, duration = self.sessions[self.session_index]
+        name, duration = self.sessions[self.session_index]
         self.time_left = duration
-        self.update_session_label()
-        self.timer_label.configure(text=self.format_time(self.time_left))
-        self.status_label.configure(text=f"{session_name} starting...")
+        self._update_session_label()
+        self.timer_label.configure(text=self._format_time(self.time_left))
+        self.status_label.configure(text=f"{name} starting...")
 
-    def update_session_label(self):
-        session_name = self.sessions[self.session_index][0]
-        if session_name == "Work":
-            self.session_label.configure(
-                text="Work Session",
-                text_color="#2E86C1"           # blue for work
-            )
+    def _update_session_label(self):
+        name = self.sessions[self.session_index][0]
+        if name == "Work":
+            self.session_label.configure(text="Work Session", text_color="#2E86C1")
         else:
-            self.session_label.configure(
-                text="Break Time",
-                text_color="#27AE60"           # green for break
-            )
+            self.session_label.configure(text="Break Time", text_color="#27AE60")
+
+    def on_menu(self, selection):
+        # placeholder for handling sidebar clicks
+        print(f"Menu clicked: {selection}")
 
 if __name__ == "__main__":
     app = PomodoroApp()
