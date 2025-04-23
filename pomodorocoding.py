@@ -157,7 +157,7 @@ class PomodoroApp(ctk.CTk):
     def _update_session_label(self): # update session label based on current session (Work session or Break)
         name = self.sessions[self.session_index][0]
         if name == "Work":
-            self.session_label.configure(text="Work Session", text_color="#2E86C1")
+            self.session_label.configure(text="Work Session", text_color="#A3A1A1")
         else:
             self.session_label.configure(text="Break Time", text_color="#27AE60")
 
