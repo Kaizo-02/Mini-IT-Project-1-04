@@ -1,7 +1,4 @@
-from argon2 import PasswordHasher
 from database import create_connection
-
-ph = PasswordHasher()
 
 def add_user (username, email, password):
     conn = create_connection()
@@ -37,13 +34,13 @@ def get_goals(user_id):
     conn.close()
     return goals
 
-def add_habit(habit_id, description, habit_name, user_id):
+def add_habit(description, habit_name, user_id):
     conn = create_connection()
     cursor = conn.cursor()
     cursor.execute("""
-        INSERT INTO habits (habit_id, derscription, habit_name, user_id)
-        VALUES (?, ?, ?, ?)
-    """, (habit_id, description, habit_name, user_id))
+        INSERT INTO habits (description, habit_name, user_id)
+        VALUES (?, ?, ?)
+    """, (description, habit_name, user_id))
     conn.commit()
     conn.close()
 
@@ -55,13 +52,13 @@ def get_habits(user_id):
     conn.close()
     return habits
 
-def add_timers(task_id, task, start_time, end_time, duration, completed, user_id):
+def add_timers(task, start_time, end_time, duration, completed, user_id):
     conn = create_connection()
     cursor = conn.cursor()
     cursor.execute("""
-        INSERT INTO timers (task_id, task, start_time, edn_time, duration, completed, user_id)
-        VALUES (?, ?, ?, ?)
-    """, (task_id, task, start_time, end_time, duration, completed))
+        INSERT INTO timers (task, start_time, end_time, duration, completed, user_id)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (task, start_time, end_time, duration, completed, user_id))
     conn.commit()
     conn.close()
 
