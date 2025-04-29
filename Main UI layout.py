@@ -22,7 +22,7 @@ def main_window():
         event.widget.config(bg="#E64A19")
 
     def on_leave(event):
-        event.widget.config(bg="#FF5722")
+        event.widget.config(bg="#A3A1A1")
 
     def go_to_home():
         print("Navigating to Home...")
@@ -32,7 +32,10 @@ def main_window():
         print("Launching Habit Builder...")
     def pomodoro_timer():
         print("Starting Pomodoro Timer...")
-        PomodoroApp().mainloop()
+        root2.withdraw()  # Hide main window
+        app = PomodoroApp()
+        app.mainloop()
+        root2.deiconify()
 #redirection buttons
     buttons = [
         {"text": "Home", "command": go_to_home},
@@ -42,7 +45,7 @@ def main_window():
     ]
 
     for btn in buttons:
-        button = Button(sidebar, text=btn["text"], bg="#FF5722", fg="white", font=("Arial", 14, "bold"), borderwidth=0,
+        button = Button(sidebar, text=btn["text"], bg="#A3A1A1", fg="black",  font=("Inter", 14, "bold"), borderwidth=0,
                         command=btn["command"])
         button.pack(pady=10, fill="x", padx=10)
         button.bind("<Enter>", on_hover)
@@ -80,19 +83,19 @@ root1.title("IMPROVE - MAKE LIFE BETTER")
 root1.geometry("700x500")
 root1.configure(bg="#f5f5f5")
 
-Label(root1, text="Welcome to IMPROVE", bg="#FF5722", fg="white", font=("Arial", 20, "bold"), height=2).pack(fill="x")
+Label(root1, text="Welcome to IMPROVE", bg="#FF5722", fg="white", font=("Inter", 20, "bold"), height=2).pack(fill="x")
 
 # Enter username
-e1 = Entry(root1, width=30, font=("Arial", 14), borderwidth=2)
+e1 = Entry(root1, width=30, font=("Inter", 14), borderwidth=2)
 e1.pack(pady=20)
 e1.insert(0, "Your Username")
 
 #Enter password
-e2 = Entry(root1, width=30, font=("Arial", 14), borderwidth=2, show="*")
+e2 = Entry(root1, width=30, font=("Inter", 14), borderwidth=2, show="*")
 e2.pack(pady=20)
 e2.insert(0, "Your Password")
 
 # Login Button
-Button(root1, text="Login", bg="#FF5722", fg="white", font=("Arial", 14, "bold"), borderwidth=0, command=login).pack(pady=20)
+Button(root1, text="Login", bg="#FF5722", fg="white", font=("Inter", 14, "bold"), borderwidth=0, command=login).pack(pady=20)
 
 root1.mainloop()
