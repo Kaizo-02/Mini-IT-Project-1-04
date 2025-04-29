@@ -32,7 +32,7 @@ class PomodoroApp(ctk.CTk):
                 fg_color="lightgray",
                 hover_color="#d3d3d3",
                 text_color="black",
-                font=("Arial", 14, "bold"),
+                font=("Inter", 14, "bold"),
                 border_width=2,
                 command=lambda t=name: self.on_menu(t)
             ).pack(pady=(20, 0), padx=10, fill="x")

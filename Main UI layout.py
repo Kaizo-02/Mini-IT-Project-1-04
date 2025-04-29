@@ -1,5 +1,6 @@
 from tkinter import *
 from tkinter.ttk import Separator
+from pomodorocoding import PomodoroApp
 
 def main_window():
     root2 = Tk()
@@ -31,6 +32,8 @@ def main_window():
         print("Launching Habit Builder...")
     def pomodoro_timer():
         print("Starting Pomodoro Timer...")
+        PomodoroApp().mainloop()
+
 
 #redirection buttons
     buttons = [
