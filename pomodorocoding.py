@@ -1,5 +1,6 @@
 import customtkinter as ctk
 
+
 # 1) Global appearance
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
@@ -39,6 +40,7 @@ class PomodoroApp(ctk.CTk):
 
         content = ctk.CTkFrame(master=self, fg_color="white")
         content.pack(side="left", fill="both", expand=True, padx=20, pady=20)
+        
 
         
         self.sessions = [("Work", 1 * 3), ("Break", 1 * 3)]

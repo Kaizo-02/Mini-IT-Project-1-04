@@ -33,8 +33,6 @@ def main_window():
     def pomodoro_timer():
         print("Starting Pomodoro Timer...")
         PomodoroApp().mainloop()
-
-
 #redirection buttons
     buttons = [
         {"text": "Home", "command": go_to_home},
