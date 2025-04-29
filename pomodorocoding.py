@@ -4,7 +4,7 @@ class PomodoroFrame(ctk.CTkFrame):
     def __init__(self, master):
         super().__init__(master, fg_color="white")
 
-        # Header inside the frame (optional: omit if MainApp already has a global header)
+        =
         header = ctk.CTkFrame(self, height=80, fg_color="white")
         header.pack(side="top", fill="x")
         ctk.CTkLabel(
@@ -15,12 +15,12 @@ class PomodoroFrame(ctk.CTkFrame):
             font=("Inter", 40, "bold")
         ).place(relx=0.5, rely=0.5, anchor="center")
 
-        # Content Frame
+        
         content = ctk.CTkFrame(self, fg_color="white")
         content.pack(expand=True, fill="both", padx=20, pady=20)
 
-        # Pomodoro logic
-        self.sessions = [("Work", 25 * 60), ("Break", 5 * 60)]  # production: 25min/5min
+        # Pomodoro funcitons
+        self.sessions = [("Work", 1 * 3), ("Break", 1 * 3)]  
         self.session_index = 0
         self.time_left = self.sessions[self.session_index][1]
         self.running = False
