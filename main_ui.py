@@ -1,6 +1,6 @@
 from tkinter import *
 from tkinter.ttk import Separator
-from pomodorocoding import PomodoroApp
+
 
 def main_window():
     global root2 
@@ -33,10 +33,12 @@ def main_window():
         print("Launching Habit Builder...")
     def pomodoro_timer():
         print("Starting Pomodoro Timer...")
-        root2.withdraw()  # Hide main window
+        root2.withdraw()  # this is to Hide the main window
+        from pomodorocoding import PomodoroApp
         app = PomodoroApp()
         app.mainloop()
-        root2.deiconify()
+        root2.deiconify() ; 
+
 #redirection buttons
     buttons = [
         {"text": "Home", "command": go_to_home},
@@ -46,7 +48,7 @@ def main_window():
     ]
 
     for btn in buttons:
-        button = Button(sidebar, text=btn["text"], bg="#A3A1A1", fg="black",  font=("Inter", 14, "bold"), borderwidth=0,
+        button = Button(sidebar, text=btn["text"], bg="#A3A1A1", fg="lightgray",  font=("Inter", 14, "bold"), borderwidth=0,
                         command=btn["command"])
         button.pack(pady=10, fill="x", padx=10)
         button.bind("<Enter>", on_hover)

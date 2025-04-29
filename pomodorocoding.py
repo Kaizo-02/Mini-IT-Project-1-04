@@ -1,7 +1,5 @@
 import customtkinter as ctk
   
-  # ✅ make sure this file exists and is named correctly
-
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
@@ -11,10 +9,14 @@ class PomodoroApp(ctk.CTk):
         self.title("IMPROVE - MAKE LIFE BETTER")
         self.geometry("1920x1080")
         self.resizable(True, True)
+        self.grid_rowconfigure(0, weight=1)  # content row expands
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_columnconfigure(1, weight=1)
 
         # Header
-        header = ctk.CTkFrame(master=self, height=80, fg_color="white")
-        header.pack(side="top", fill="x")
+        header = ctk.CTkFrame(master=self, height=50, fg_color="white")
+        header.grid(row=1, column=1, columnspan=2, sticky="nsew")
+        
         ctk.CTkLabel(
             master=header,
             text="IMPROVE - MAKE LIFE BETTER",
@@ -25,22 +27,24 @@ class PomodoroApp(ctk.CTk):
 
         # Sidebar
         sidebar = ctk.CTkFrame(master=self, width=200, fg_color="red")
-        sidebar.pack(side="left", fill="y")
+        sidebar.grid(row=1, column=0, sticky="nsew")
+        self.grid_rowconfigure(1, weight=1)
+        self.grid_columnconfigure(0, weight=0)
         for name in ["Home", "Goal Planner", "Habit builder", "Pomodoro timer"]:
             ctk.CTkButton(
                 master=sidebar,
                 text=name,
                 fg_color="lightgray",
-                hover_color="#d3d3d3",
+                hover_color="#FF7043",
                 text_color="black",
-                font=("Inter", 14, "bold"),
+                font=("Inter", 25, "bold"),
                 border_width=2,
                 command=lambda t=name: self.on_menu(t)
             ).pack(pady=(20, 0), padx=10, fill="x")
 
         # Main Content
         content = ctk.CTkFrame(master=self, fg_color="white")
-        content.pack(side="left", fill="both", expand=True, padx=20, pady=20)
+        content.grid(row=1, column=1, sticky="nsew")
 
         self.sessions = [("Work", 1 * 3), ("Break", 1 * 3)]
         self.session_index = 0
@@ -51,7 +55,7 @@ class PomodoroApp(ctk.CTk):
         self.session_label = ctk.CTkLabel(
             master=content,
             text="Work Session",
-            font=("Inter", 150),
+            font=("Inter", 150 , "bold"),
             text_color="#2E86C1"
         )
         self.session_label.pack(pady=30)
