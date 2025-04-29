@@ -22,7 +22,7 @@ class PomodoroApp(ctk.CTk):
             font=("Inter", 70, "bold")
         ).place(relx=0.5, rely=0.5, anchor="center")
 
-        # 3) Sidebar
+        # 3) Sidebar 
         sidebar = ctk.CTkFrame(master=self, width=200, fg_color="red")
         sidebar.pack(side="left", fill="y")
         for name in ["Home", "Goal Planner", "Habit builder", "Pomodoro timer"]:
@@ -37,17 +37,17 @@ class PomodoroApp(ctk.CTk):
                 command=lambda t=name: self.on_menu(t)
             ).pack(pady=(20, 0), padx=10, fill="x")
 
+        # 4) Content Area
         content = ctk.CTkFrame(master=self, fg_color="white")
         content.pack(side="left", fill="both", expand=True, padx=20, pady=20)
 
-        
-        self.sessions = [("Work", 1 * 3), ("Break", 1 * 3)]
+        # Timer logic setup
+        self.sessions = [("Work", 1 * 3), ("Break", 1 * 3)]  # short for testing
         self.session_index = 0
         self.time_left = self.sessions[self.session_index][1]
         self.running = False
-        self.session_counter = 0  # count completed work sessions based on user's input. 
+        self.session_counter = 0
 
-   
         self.session_label = ctk.CTkLabel(
             master=content,
             text="Work Session",
@@ -64,7 +64,6 @@ class PomodoroApp(ctk.CTk):
         )
         self.timer_label.pack(pady=20)
 
-       
         self.counter_label = ctk.CTkLabel(
             master=content,
             text=f"Sessions Completed: {self.session_counter}",
@@ -73,7 +72,7 @@ class PomodoroApp(ctk.CTk):
         )
         self.counter_label.pack(pady=10)
 
-        # Button frame for Start/Reset side by side
+        # Button frame
         btn_frame = ctk.CTkFrame(master=content, fg_color="transparent")
         btn_frame.pack(pady=20)
 
@@ -139,13 +138,10 @@ class PomodoroApp(ctk.CTk):
         self._update_session_label()
 
     def _switch_session(self):
-        
         if self.sessions[self.session_index][0] == "Work":
             self.session_counter += 1
-            self.counter_label.configure(
-                text=f"Sessions Completed: {self.session_counter}"
-            )
-       
+            self.counter_label.configure(text=f"Sessions Completed: {self.session_counter}")
+
         self.session_index = (self.session_index + 1) % len(self.sessions)
         name, duration = self.sessions[self.session_index]
         self.time_left = duration
@@ -153,7 +149,7 @@ class PomodoroApp(ctk.CTk):
         self.timer_label.configure(text=self._format_time(self.time_left))
         self.status_label.configure(text=f"{name} starting...")
 
-    def _update_session_label(self): # update session label based on current session (Work session or Break)
+    def _update_session_label(self):
         name = self.sessions[self.session_index][0]
         if name == "Work":
             self.session_label.configure(text="Work Session", text_color="#A3A1A1")
@@ -161,7 +157,6 @@ class PomodoroApp(ctk.CTk):
             self.session_label.configure(text="Break Time", text_color="#27AE60")
 
     def on_menu(self, selection):
-        # placeholder for handling sidebar clicks
         print(f"Menu clicked: {selection}")
 
 if __name__ == "__main__":
