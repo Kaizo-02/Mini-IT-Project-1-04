@@ -41,11 +41,11 @@ class PomodoroApp(ctk.CTk):
         content.pack(side="left", fill="both", expand=True, padx=20, pady=20)
 
         
-        self.sessions = [("Work", 25 * 60), ("Break", 5 * 60)]
+        self.sessions = [("Work", 1 * 3), ("Break", 1 * 3)]
         self.session_index = 0
         self.time_left = self.sessions[self.session_index][1]
         self.running = False
-        self.session_counter = 0  # count completed work sessions
+        self.session_counter = 0  # count completed work sessions based on user's input. 
 
    
         self.session_label = ctk.CTkLabel(
