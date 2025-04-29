@@ -1,5 +1,5 @@
 import customtkinter as ctk
-from main_ui_layout import main_window
+  
   # ✅ make sure this file exists and is named correctly
 
 ctk.set_appearance_mode("light")
@@ -112,6 +112,7 @@ class PomodoroApp(ctk.CTk):
     def on_menu(self, selection):
         if selection == "Home":
             self.destroy()
+            from main_ui import main_window
             main_window()
         else:
             print(f"Menu clicked: {selection}")
