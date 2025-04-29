@@ -12,13 +12,14 @@ def main_window():
     # Header for the app
     header = Frame(root2, bg="white", height=80)
     header.pack(fill="x")
-    Label(header, text="IMPROVE - MAKE LIFE BETTER", bg="#FF5722", fg="white", font=("Arial", 24, "bold")).pack(pady=20)
+    Label(header, text="IMPROVE - MAKE LIFE BETTER", bg="#FF5722", fg="white", font=("Inter", 24, "bold")).pack(pady=20)
 
     # Sidebar with buttons
     sidebar = Frame(root2, bg="#FF5722", width=200)
     sidebar.pack(side="left", fill="y")
 
     # Sidebar Buttons 
+    Label(sidebar, text="Main Menu", bg="#FF5722", fg="black", font=("Inter", 20, "bold")).pack(pady=20)
     def on_hover(event):
         event.widget.config(bg="#E64A19")
 
@@ -33,7 +34,7 @@ def main_window():
         print("Launching Habit Builder...")
     def pomodoro_timer():
         print("Starting Pomodoro Timer...")
-        root2.withdraw()  # this is to Hide the main window
+        root2.withdraw()  #hiding the main window/main menu!
         from pomodorocoding import PomodoroApp
         app = PomodoroApp()
         app.mainloop()
