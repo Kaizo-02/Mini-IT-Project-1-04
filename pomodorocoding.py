@@ -15,7 +15,7 @@ class PomodoroApp(ctk.CTk):
 
         # Header
         header = ctk.CTkFrame(master=self, height=50, fg_color="white")
-        header.grid(row=1, column=1, columnspan=2, sticky="nsew")
+        header.grid(row=0, column=0, columnspan=2, sticky="nsew")
         
         ctk.CTkLabel(
             master=header,
