@@ -9,16 +9,15 @@ def main_window():
     root2.geometry("1920x1080")
     root2.configure(bg="#f5f5f5")
 
-    # Header for the app
+    # Headerfor the uh app 
     header = Frame(root2, bg="white", height=80)
     header.pack(fill="x")
     Label(header, text="IMPROVE - MAKE LIFE BETTER", bg="#FF5722", fg="white", font=("Inter", 24, "bold")).pack(pady=20)
 
-    # Sidebar with buttons
     sidebar = Frame(root2, bg="#FF5722", width=200)
     sidebar.pack(side="left", fill="y")
 
-    # Sidebar Buttons 
+    # Sidebar Button and its hover effect 
     Label(sidebar, text="Main Menu", bg="#FF5722", fg="black", font=("Inter", 20, "bold")).pack(pady=20)
     def on_hover(event):
         event.widget.config(bg="#E64A19")
