@@ -1,104 +1,78 @@
 from tkinter import *
+import customtkinter as ctk
 from tkinter.ttk import Separator
 
-
 def main_window():
-    global root2 
-    root2 = Tk()
-    root2.title("IMPROVE - MAKE LIFE BETTER")
-    root2.geometry("1920x1080")
-    root2.configure(bg="#f5f5f5")
+    global root 
+    root = Tk()
+    root.title("IMPROVE - MAKE LIFE BETTER")
+    root.geometry("900x600")
+    root.configure(bg="#f5f5f5")
 
-    # Headerfor the uh app 
-    header = Frame(root2, bg="white", height=80)
+    # 📌 HEADER (Always Visible)
+    header = Frame(root, bg="#f5f5f5", height=80)
     header.pack(fill="x")
-    Label(header, text="IMPROVE - MAKE LIFE BETTER", bg="#FF5722", fg="white", font=("Inter", 24, "bold")).pack(pady=20)
+    Label(header, text="IMPROVE - MAKE LIFE BETTER", fg="red", font=("Inter", 24, "bold")).pack(pady=20)
 
-    sidebar = Frame(root2, bg="#FF5722", width=200)
+    # 📌 SIDEBAR NAVIGATION
+    sidebar = Frame(root, bg="#FF5722", width=200)
     sidebar.pack(side="left", fill="y")
 
-    # Sidebar Button and its hover effect 
     Label(sidebar, text="Main Menu", bg="#FF5722", fg="black", font=("Inter", 20, "bold")).pack(pady=20)
-    def on_hover(event):
-        event.widget.config(bg="#E64A19")
 
-    def on_leave(event):
-        event.widget.config(bg="#A3A1A1")
-
-    def go_to_home():
-        print("Navigating to Home...")
-    def goal_planner():
-        print("Opening Goal Planner...")
-    def habit_builder():
-        print("Launching Habit Builder...")
-    def pomodoro_timer():
-        print("Starting Pomodoro Timer...")
-        root2.withdraw()  #hiding the main window/main menu!
-        from pomodorocoding import PomodoroApp
-        app = PomodoroApp()
-        app.mainloop()
-        root2.deiconify() ; 
-
-#redirection buttons
-    buttons = [
-        {"text": "Home", "command": go_to_home},
-        {"text": "Goal Planner", "command": goal_planner},
-        {"text": "Habit Builder", "command": habit_builder},
-        {"text": "Pomodoro Timer", "command": pomodoro_timer}
-    ]
-
-    for btn in buttons:
-        button = Button(sidebar, text=btn["text"], bg="#A3A1A1", fg="lightgray",  font=("Inter", 14, "bold"), borderwidth=0,
-                        command=btn["command"])
-        button.pack(pady=10, fill="x", padx=10)
-        button.bind("<Enter>", on_hover)
-        button.bind("<Leave>", on_leave)
-
-#Area for progression features
-    main_content = Frame(root2, bg="white", width=215)
+    # 📌 MAIN CONTENT AREA
+    main_content = Frame(root, bg="white")
     main_content.pack(side="right", expand=True, fill="both")
 
-    sections = [
-        {"title": "Your Planner Progression"},
-        {"title": "Weekly Habit Track"},
-        {"title": "Pomodoro Timer - Build Your Focus"},
-        {"title": "Got Something in Mind? Write it Down."}
+    # 📌 GOAL PLANNER FRAME (Hidden Initially)
+    goal_planner_frame = Frame(main_content, bg="#FFEBEE", padx=20, pady=20)
+    Label(goal_planner_frame, text="Goal Planner", font=("Arial", 18, "bold")).pack()
+    goal_entry = ctk.CTkEntry(goal_planner_frame, width=300)
+    goal_entry.pack()
+    date_entry = ctk.CTkEntry(goal_planner_frame, width=300)
+    date_entry.pack()
+
+    Button(goal_planner_frame, text="Add Goal", command=lambda: print("Goal Added!"), bg="green").pack(pady=10)
+
+    # 📌 PROGRESSION TRACKER & DIARY FRAME
+    home_frame = Frame(main_content, bg="#FFEBEE", padx=20, pady=20)
+    
+    tracker_buttons = [
+        "Your Planner Progression",
+        "Weekly Habit Track",
+        "Pomodoro Timer - Build Your Focus",
+        "Got Something in Mind? Write it Down."
     ]
 
-    for sec in sections:
-        section_frame = Frame(main_content, bg="#FFEBEE", highlightbackground="#FFCDD2", highlightthickness=2, padx=20, pady=20)
-        section_frame.pack(padx=20, pady=20, fill="x")
-        Button(section_frame, text=sec["title"], bg="#FFFFFF", font=("Times New Roman", 18, "bold"), relief="flat").pack(anchor="w")
+    for btn_text in tracker_buttons:
+        Label(home_frame, text=btn_text, font=("Arial", 18, "bold")).pack(pady=10)
 
-    root2.mainloop()
+    # 📌 FUNCTION TO SWITCH SECTIONS WITHOUT OPENING NEW WINDOWS
+    def show_goal_planner():
+        for widget in main_content.winfo_children():
+            widget.pack_forget()  # Hide other sections
+        goal_planner_frame.pack(expand=True, fill="both")
 
-#login function
-def login():
-    username = e1.get()
-    password = e2.get()
-    print(f"Username: {username}, Password: {password}")
-    root1.destroy()
-    main_window()
+    def show_home():
+        for widget in main_content.winfo_children():
+            widget.pack_forget()
+        home_frame.pack(expand=True, fill="both")
 
-# Login Window
-root1 = Tk()
-root1.title("IMPROVE - MAKE LIFE BETTER")
-root1.geometry("700x500")
-root1.configure(bg="#f5f5f5")
+    # 📌 SIDEBAR BUTTONS
+    nav_buttons = [
+        {"text": "Home", "command": show_home},
+        {"text": "Goal Planner", "command": show_goal_planner},
+        {"text": "Habit Builder", "command": lambda: print("Habit Builder")},
+        {"text": "Pomodoro Timer", "command": lambda: print("Pomodoro Timer")}
+    ]
 
-Label(root1, text="Welcome to IMPROVE", bg="#FF5722", fg="white", font=("Inter", 20, "bold"), height=2).pack(fill="x")
+    for btn in nav_buttons:
+        button = Button(sidebar, text=btn["text"], bg="#A3A1A1", font=("Arial", 14), command=btn["command"])
+        button.pack(pady=10, fill="x")
 
-# Enter username
-e1 = Entry(root1, width=30, font=("Inter", 14), borderwidth=2)
-e1.pack(pady=20)
-e1.insert(0, "Your Username")
+    # 📌 SHOW HOME PAGE ON STARTUP
+    show_home()
 
-#Enter password
-e2 = Entry(root1, width=30, font=("Inter", 14), borderwidth=2, show="*")
-e2.pack(pady=20)
-e2.insert(0, "Your Password")
+    root.mainloop()
 
-# Login Button
-Button(root1, text="Login", bg="#FF5722", fg="white", font=("Inter", 14, "bold"), borderwidth=0, command=login).pack(pady=20)
-
-root1.mainloop()
+main_window()
