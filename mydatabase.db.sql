@@ -1,7 +1,7 @@
 BEGIN TRANSACTION;
 CREATE TABLE IF NOT EXISTS "goal_planner" (
 	"goal"	TEXT NOT NULL UNIQUE,
-	"due_date"	TEXT NOT NULL UNIQUE,
+	"due_date"	DATE NOT NULL UNIQUE,
 	"description"	TEXT UNIQUE,
 	"goal_id"	INTEGER,
 	"user_id"	INTEGER NOT NULL UNIQUE,

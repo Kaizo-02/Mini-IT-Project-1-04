@@ -1,4 +1,9 @@
 from database import create_connection
+import sqlite3
+
+def get_connection():
+    conn = sqlite3.connect('your_database.db', check_same_thread=False)  # Set check_same_thread=False for multi-threading support
+    return conn
 
 def add_user (username, email, password):
     conn = create_connection()
@@ -52,15 +57,22 @@ def get_habits(user_id):
     conn.close()
     return habits
 
-def add_timers(task, start_time, end_time, duration, completed, user_id):
-    conn = create_connection()
-    cursor = conn.cursor()
-    cursor.execute("""
-        INSERT INTO timers (task, start_time, end_time, duration, completed, user_id)
+def add_timers(task_name, start_time, end_time, duration, completed, user_id):
+    try:
+        # Code that might raise an exception (e.g., database insert)
+        conn = sqlite3.connect('your_database.db', check_same_thread=False)
+        cursor = conn.cursor()
+        cursor.execute("""
+        INSERT INTO timers (user_id, task_name, start_time, end_time, duration, completed)
         VALUES (?, ?, ?, ?, ?, ?)
-    """, (task, start_time, end_time, duration, completed, user_id))
-    conn.commit()
-    conn.close()
+        """, (user_id, task_name, start_time, end_time, duration, completed))
+        conn.commit()
+
+    except sqlite3.Error as e:
+        print(f"Error inserting timer: {e}")
+
+    finally:
+        conn.close()
 
 def timers(user_id):
     conn = create_connection()

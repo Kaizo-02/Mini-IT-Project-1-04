@@ -20,7 +20,7 @@ def create_tables():
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS goals (
             goal TEXT NOT NULL,
-            due_date TEXT NOT NULL,
+            due_date DATE NOT NULL,
             description TEXT UNIQUE,
             goal_id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
@@ -42,8 +42,8 @@ def create_tables():
         CREATE TABLE IF NOT EXISTS timers (
             task_id INTEGER PRIMARY KEY AUTOINCREMENT,
             task TEXT NOT NULL,
-            start_time TEXT NOT NULL,
-            end_time TEXT NOT NULL,
+            start_time INTEGER NOT NULL,
+            end_time INTEGER NOT NULL,
             duration INTEGER NOT NULL,
             completed INTEGER NOT NULL DEFAULT 1,
             user_id INTEGER NOT NULL UNIQUE,

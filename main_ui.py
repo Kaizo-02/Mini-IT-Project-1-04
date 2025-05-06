@@ -215,7 +215,7 @@ def show_main(user_id):
 
     def pomodoro_timer():
         clear_main_area()
-        PomodoroApp(master=main_area)
+        PomodoroApp(master=main_area, user_id=user_id)
 
     # Sidebar buttons
     for txt, cmd in [("Home", go_to_home), ("Goal Planner", goal_planner), ("Habit Builder", habit_builder), ("Pomodoro Timer", pomodoro_timer)]:
