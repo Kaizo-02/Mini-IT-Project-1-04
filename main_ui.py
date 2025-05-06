@@ -1,7 +1,6 @@
 import customtkinter as ctk
 
-# Set theme
-ctk.set_appearance_mode("light")
+# ---Set theme--
 ctk.set_default_color_theme("blue")
 
 
@@ -85,10 +84,11 @@ def pomodoro_timer_page(main_content):
 
     import tkinter.messagebox as messagebox
 
-    # === Timer Config ===
+    # ------------------------------------------------------------------------------------- Timer Config ------------------------------------------------------#easy to spot #trust
     timer_modes = {
         "Pomodoro": [("Work", 25 * 60), ("Break", 5 * 60)],
-        "Valorant": [("Focus", 50 * 60), ("Rest", 10 * 60)]
+        "Valorant": [("Focus", 50 * 60), ("Rest", 10 * 60)],
+        "Testing": [("Focus", 1 * 3), ("Rest", 1 * 3)]
     }
     current_mode = ["Pomodoro"]
     sessions = timer_modes[current_mode[0]]
@@ -182,8 +182,8 @@ def pomodoro_timer_page(main_content):
 
         ctk.CTkButton(popup, text="Save Timer", command=save_custom).pack(pady=20)
 
-    # === UI Layout ===
-    # Top frame for mode switcher + add custom button
+    #starts UI layout 
+    # frame to switch buttons and modes and add timer custom 
     top_frame = ctk.CTkFrame(main_content, fg_color="transparent")
     top_frame.pack(anchor="nw", padx=20, pady=10)
 
@@ -196,7 +196,9 @@ def pomodoro_timer_page(main_content):
     ctk.CTkButton(top_frame, text="+ Add Custom Timer", command=add_custom_timer,
                   fg_color="#A3A1A1", hover_color="#8F8D8D", text_color="white").pack(side="left", padx=10)
 
-    # Timer frame (below)
+
+
+
     timer_frame = ctk.CTkFrame(main_content, fg_color="transparent")
     timer_frame.pack(expand=True, fill="both")
 
