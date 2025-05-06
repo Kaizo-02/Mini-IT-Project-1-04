@@ -19,8 +19,8 @@ def create_tables():
 
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS goals (
-        goal TEXT NOT NULL UNIQUE,
-	    due_date TEXT NOT NULL UNIQUE,
+        goal TEXT NOT NULL ,
+	    due_date TEXT NOT NULL ,
 	    description TEXT UNIQUE,
 	    goal_id	INTEGER PRIMARY KEY AUTOINCREMENT,
 	    user_id	INTEGER NOT NULL,
@@ -30,8 +30,8 @@ def create_tables():
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS habits (
         habit_id INTEGER PRIMARY KEY AUTOINCREMENT,
-	    description	TEXT NOT NULL UNIQUE,
-	    habit_name	TEXT NOT NULL UNIQUE,
+	    description	TEXT NOT NULL ,
+	    habit_name	TEXT NOT NULL ,
 	    user_id	INTEGER NOT NULL UNIQUE,
 	    FOREIGN KEY(user_id) REFERENCES users(id)
         )
@@ -39,7 +39,7 @@ def create_tables():
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS timers (
         task_id	INTEGER PRIMARY KEY AUTOINCREMENT,
-	    task TEXT NOT NULL UNIQUE,
+	    task TEXT NOT NULL ,
 	    start_time	TEXT NOT NULL,
 	    end_time TEXT NOT NULL,
 	    duration INTEGER NOT NULL,

@@ -1,11 +1,10 @@
 import customtkinter as ctk
 from pomodorocoding import PomodoroApp
-from models import add_user, get_users, add_goal, get_goals, add_habit, get_habits, add_timers, timers
+from models import add_user, get_users, add_goal, get_goals, add_habit, get_habits
 from argon2 import PasswordHasher
 
 ph = PasswordHasher()
 
-# Global state
 e1, e2, e3 = None, None, None
 app = None
 
@@ -109,65 +108,121 @@ def show_register():
 def show_main(user_id):
     for widget in app.winfo_children():
         widget.destroy()
-        header = ctk.CTkFrame(app, height=80)
+
+    # Header
+    header = ctk.CTkFrame(app, height=60, fg_color="#FF5722")
     header.pack(fill="x")
-    ctk.CTkLabel(header, text="IMPROVE - MAKE LIFE BETTER", text_color="white",
-                 fg_color="#FF5722", corner_radius=0, font=ctk.CTkFont(size=24, weight="bold")).pack(pady=20)
 
-    content = ctk.CTkFrame(app)
-    content.pack(fill="both", expand=True)
+    hamburger_btn = ctk.CTkButton(header, text="☰", width=50, command=lambda: toggle_sidebar(), fg_color="white", text_color="black")
+    hamburger_btn.pack(side="left", padx=10, pady=10)
 
-    sidebar = ctk.CTkFrame(content, width=200, fg_color="#FF5722")
+    title = ctk.CTkLabel(header, text="IMPROVE - MAKE LIFE BETTER", font=ctk.CTkFont(size=20, weight="bold"), text_color="white", fg_color="#FF5722")
+    title.pack(pady=10)
+
+    # Wrapper
+    wrapper = ctk.CTkFrame(app)
+    wrapper.pack(fill="both", expand=True)
+
+    # Sidebar
+    sidebar = ctk.CTkFrame(wrapper, width=0, fg_color="#FF5722")
     sidebar.pack(side="left", fill="y")
+    sidebar.pack_propagate(False)
 
-    main_area = ctk.CTkFrame(content, fg_color="white")
+    # Main Area
+    main_area = ctk.CTkFrame(wrapper, fg_color="white")
     main_area.pack(side="right", fill="both", expand=True)
 
-    def go_to_home():
-        print("Navigating to Home...")
+    sidebar_state = {"visible": False}
+
+    def toggle_sidebar():
+        if sidebar_state["visible"]:
+            slide_out()
+        else:
+            slide_in()
+
+    def slide_in(current=0):
+        if current < 200:
+            sidebar.configure(width=current)
+            app.after(5, lambda: slide_in(current + 20))
+        else:
+            sidebar.configure(width=200)
+            sidebar_state["visible"] = True
+
+    def slide_out(current=200):
+        if current > 0:
+            sidebar.configure(width=current)
+            app.after(5, lambda: slide_out(current - 20))
+        else:
+            sidebar.configure(width=0)
+            sidebar_state["visible"] = False
+
+    def clear_main_area():
         for widget in main_area.winfo_children():
             widget.destroy()
+
+    def go_to_home():
+        clear_main_area()
+        ctk.CTkLabel(main_area, text="Home Page", font=("Arial", 18, "bold")).pack(pady=10)
 
     def goal_planner():
-        print("Opening Goal Planner...")
-        for widget in main_area.winfo_children():
-            widget.destroy()
+        clear_main_area()
+        ctk.CTkLabel(main_area, text="Your Goals", font=("Arial", 18, "bold")).pack(pady=10)
+
+        goals = get_goals(user_id)
+        for goal in goals:
+            goal_text = f"{goal[2]} (Due: {goal[4]}) - {goal[3]}"
+            ctk.CTkLabel(main_area, text=goal_text).pack(anchor="w", padx=20)
+
+        goal_entry = ctk.CTkEntry(main_area, placeholder_text="Goal Title")
+        goal_entry.pack(pady=5)
+
+        desc_entry = ctk.CTkEntry(main_area, placeholder_text="Description")
+        desc_entry.pack(pady=5)
+
+        due_entry = ctk.CTkEntry(main_area, placeholder_text="Due Date (YYYY-MM-DD)")
+        due_entry.pack(pady=5)
+
+        def save_goal():
+            g, d, due = goal_entry.get(), desc_entry.get(), due_entry.get()
+            if g and d and due:
+                add_goal(user_id, g, d, due)
+                goal_planner()
+
+        ctk.CTkButton(main_area, text="Add Goal", command=save_goal, fg_color="#F4511E", text_color="white").pack(pady=10)
 
     def habit_builder():
-        print("Launching Habit Builder...")
-        for widget in main_area.winfo_children():
-            widget.destroy()
+        clear_main_area()
+        ctk.CTkLabel(main_area, text="Your Habits", font=("Arial", 18, "bold")).pack(pady=10)
+
+        habits = get_habits(user_id)
+        for habit in habits:
+            habit_text = f"{habit[2]} - {habit[1]}"
+            ctk.CTkLabel(main_area, text=habit_text).pack(anchor="w", padx=20)
+
+        name_entry = ctk.CTkEntry(main_area, placeholder_text="Habit Name")
+        name_entry.pack(pady=5)
+
+        desc_entry = ctk.CTkEntry(main_area, placeholder_text="Description")
+        desc_entry.pack(pady=5)
+
+        def save_habit():
+            name, desc = name_entry.get(), desc_entry.get()
+            if name and desc:
+                add_habit(desc, name, user_id)
+                habit_builder()
+
+        ctk.CTkButton(main_area, text="Add Habit", command=save_habit, fg_color="#F4511E", text_color="white").pack(pady=10)
 
     def pomodoro_timer():
-        print("Starting Pomodoro Timer...")
-        for widget in main_area.winfo_children():
-            widget.destroy()
+        clear_main_area()
         PomodoroApp(master=main_area)
 
-    buttons = [
-        ("Home", go_to_home),
-        ("Goal Planner", goal_planner),
-        ("Habit Builder", habit_builder),
-        ("Pomodoro Timer", pomodoro_timer)
-    ]
-
-    for txt, cmd in buttons:
-        ctk.CTkButton(sidebar, text=txt, command=cmd,
-                      fg_color="#F4511E", hover_color="#D84315",
+    # Sidebar buttons
+    for txt, cmd in [("Home", go_to_home), ("Goal Planner", goal_planner), ("Habit Builder", habit_builder), ("Pomodoro Timer", pomodoro_timer)]:
+        ctk.CTkButton(sidebar, text=txt, command=cmd, fg_color="#F4511E", hover_color="#D84315",
                       text_color="white", font=("Arial", 14)).pack(pady=10, fill="x", padx=10)
 
-    sections = [
-        "Your Planner Progression",
-        "Weekly Habit Track",
-        "Pomodoro Timer - Build Your Focus",
-        "Got Something in Mind? Write it Down."
-    ]
-
-    for section in sections:
-        frame = ctk.CTkFrame(main_area, fg_color="#FFEBEE", border_color="#FFCDD2", border_width=2)
-        frame.pack(pady=20, padx=20, fill="x")
-        ctk.CTkButton(frame, text=section, fg_color="white", text_color="black",
-                      font=ctk.CTkFont(family="Times New Roman", size=18, weight="bold"), hover=False).pack(anchor="w", padx=20, pady=10)
+    go_to_home()  # Default view
 
 def run_app():
     global app
