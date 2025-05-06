@@ -1,111 +1,184 @@
 import customtkinter as ctk
+from pomodorocoding import PomodoroApp
+from models import add_user, get_users, add_goal, get_goals, add_habit, get_habits, add_timers, timers
+from argon2 import PasswordHasher
 
-# Set theme
-ctk.set_appearance_mode("light")
-ctk.set_default_color_theme("blue")
+ph = PasswordHasher()
 
-def main_window():
-    global root2
-    root2 = ctk.CTk()
-    root2.title("IMPROVE - MAKE LIFE BETTER")
-    root2.geometry("1920x1080")
+# Global state
+e1, e2, e3 = None, None, None
+app = None
 
-    # Header
-    header = ctk.CTkFrame(root2, fg_color="white", height=80)
-    header.pack(fill="x")
-    ctk.CTkLabel(header, text="IMPROVE - MAKE LIFE BETTER",
-                 fg_color="#FF5722", text_color="white",
-                 font=("Inter", 24, "bold"),
-                 height=80).pack(fill="both")
+def clear_placeholder(event, entry, placeholder, is_password=False):
+    if entry.get() == placeholder:
+        entry.delete(0, ctk.END)
+        if is_password:
+            entry.configure(show="*")
 
-    # Sidebar
-    sidebar = ctk.CTkFrame(root2, fg_color="#FF5722", width=200)
-    sidebar.pack(side="left", fill="y")
-
-    ctk.CTkLabel(sidebar, text="Main Menu", fg_color="#FF5722",
-                 text_color="black", font=("Inter", 20, "bold")).pack(pady=20)
-
-    def go_to_home():
-        print("Navigating to Home...")
-
-    def goal_planner():
-        print("Opening Goal Planner...")
-
-    def habit_builder():
-        print("Launching Habit Builder...")
-
-    def pomodoro_timer():
-        print("Starting Pomodoro Timer...")
-        root2.withdraw()
-        from pomodorocoding import PomodoroApp
-        app = PomodoroApp()
-        app.mainloop()
-        root2.deiconify()
-
-    buttons = [
-        {"text": "Home", "command": go_to_home},
-        {"text": "Goal Planner", "command": goal_planner},
-        {"text": "Habit Builder", "command": habit_builder},
-        {"text": "Pomodoro Timer", "command": pomodoro_timer}
-    ]
-
-    for btn in buttons:
-        button = ctk.CTkButton(sidebar, text=btn["text"],
-                                fg_color="#A3A1A1", hover_color="#E64A19",
-                                text_color="white",
-                                font=("Inter", 16, "bold"),
-                                corner_radius=5,
-                                command=btn["command"])
-        button.pack(pady=10, fill="x", padx=10)
-
-    # Main content area
-    main_content = ctk.CTkFrame(root2, fg_color="white")
-    main_content.pack(side="left", expand=True, fill="both")
-
-    sections = [
-        {"title": "Your Planner Progression"},
-        {"title": "Weekly Habit Track"},
-        {"title": "Pomodoro Timer - Build Your Focus"},
-        {"title": "Got Something in Mind? Write it Down."}
-    ]
-
-    for sec in sections:
-        section_frame = ctk.CTkFrame(main_content, fg_color="#FFEBEE",
-                                      border_color="#FFCDD2", border_width=2)
-        section_frame.pack(padx=20, pady=20, fill="x")
-
-        ctk.CTkButton(section_frame, text=sec["title"],
-                      fg_color="white", hover_color="#f0f0f0",
-                      text_color="black",
-                      font=("Times New Roman", 18, "bold"),
-                      corner_radius=5).pack(anchor="w", padx=10, pady=10)
-
-    root2.mainloop()
+def add_placeholder(entry, placeholder, is_password=False):
+    if not entry.get():
+        entry.insert(0, placeholder)
+        if is_password:
+            entry.configure(show="")
 
 def login():
     username = e1.get()
     password = e2.get()
-    print(f"Username: {username}, Password: {password}")
-    root1.destroy()
-    main_window()
+    users = get_users()
 
-# Login window
-root1 = ctk.CTk()
-root1.title("IMPROVE - MAKE LIFE BETTER")
-root1.geometry("700x500")
+    for user in users:
+        if username == user[1]:
+            try:
+                ph.verify(user[3], password)
+                print("Login successful!")
+                show_main(user[0])
+                return
+            except:
+                print("Password verification failed.")
+                return
+    print("User not found.")
 
-ctk.CTkLabel(root1, text="Welcome to IMPROVE",
-             fg_color="#FF5722", text_color="white",
-             font=("Inter", 20, "bold"), height=50).pack(fill="x")
+def save_user():
+    username = e1.get()
+    email = e3.get()
+    password = e2.get()
+    try:
+        hashed_password = ph.hash(password)
+        add_user(username, email, hashed_password)
+        print("User registered successfully!")
+        show_login()
+    except Exception as e:
+        print(f"Error during registration: {e}")
 
-e1 = ctk.CTkEntry(root1, width=300, font=("Inter", 14), placeholder_text="Your Username")
-e1.pack(pady=20)
+def show_login():
+    for widget in app.winfo_children():
+        widget.destroy()
 
-e2 = ctk.CTkEntry(root1, width=300, font=("Inter", 14), placeholder_text="Your Password", show="*")
-e2.pack(pady=20)
+    ctk.CTkLabel(app, text="Welcome to IMPROVE", text_color="white",
+                 font=ctk.CTkFont(size=20, weight="bold"), height=50, fg_color="#FF5722").pack(fill="x")
 
-ctk.CTkButton(root1, text="Login", fg_color="#FF5722", hover_color="#E64A19",
-              text_color="white", font=("Inter", 14, "bold"),
-              command=login).pack(pady=20)
+    global e1, e2
+    e1 = ctk.CTkEntry(app, width=300, font=("Arial", 14))
+    e1.pack(pady=15)
+    e1.insert(0, "Your Username")
+    e1.bind("<FocusIn>", lambda e: clear_placeholder(e, e1, "Your Username"))
+    e1.bind("<FocusOut>", lambda e: add_placeholder(e1, "Your Username"))
 
-root1.mainloop()
+    e2 = ctk.CTkEntry(app, width=300, font=("Arial", 14))
+    e2.pack(pady=15)
+    e2.insert(0, "Your Password")
+    e2.bind("<FocusIn>", lambda e: clear_placeholder(e, e2, "Your Password", True))
+    e2.bind("<FocusOut>", lambda e: add_placeholder(e2, "Your Password", True))
+
+    ctk.CTkButton(app, text="Login", command=login,
+                  fg_color="#FF5722", text_color="white", font=("Arial", 14, "bold")).pack(pady=15)
+    ctk.CTkButton(app, text="Register", command=show_register,
+                  fg_color="#FF5722", text_color="white", font=("Arial", 14, "bold")).pack(pady=5)
+
+def show_register():
+    for widget in app.winfo_children():
+        widget.destroy()
+
+    ctk.CTkLabel(app, text="Register for IMPROVE", text_color="white",
+                 font=ctk.CTkFont(size=20, weight="bold"), height=50, fg_color="#FF5722").pack(fill="x")
+
+    global e1, e2, e3
+    e1 = ctk.CTkEntry(app, width=300, font=("Arial", 14))
+    e1.pack(pady=10)
+    e1.insert(0, "Choose a Username")
+    e1.bind("<FocusIn>", lambda e: clear_placeholder(e, e1, "Choose a Username"))
+    e1.bind("<FocusOut>", lambda e: add_placeholder(e1, "Choose a Username"))
+
+    e3 = ctk.CTkEntry(app, width=300, font=("Arial", 14))
+    e3.pack(pady=10)
+    e3.insert(0, "Your Email")
+    e3.bind("<FocusIn>", lambda e: clear_placeholder(e, e3, "Your Email"))
+    e3.bind("<FocusOut>", lambda e: add_placeholder(e3, "Your Email"))
+
+    e2 = ctk.CTkEntry(app, width=300, font=("Arial", 14))
+    e2.pack(pady=10)
+    e2.insert(0, "Choose a Password")
+    e2.bind("<FocusIn>", lambda e: clear_placeholder(e, e2, "Choose a Password", True))
+    e2.bind("<FocusOut>", lambda e: add_placeholder(e2, "Choose a Password", True))
+
+    ctk.CTkButton(app, text="Register", command=save_user,
+                  fg_color="#FF5722", text_color="white", font=("Arial", 14, "bold")).pack(pady=15)
+    ctk.CTkButton(app, text="Back to Login", command=show_login,
+                  fg_color="#FF5722", text_color="white", font=("Arial", 14, "bold")).pack(pady=5)
+
+def show_main(user_id):
+    for widget in app.winfo_children():
+        widget.destroy()
+
+    header = ctk.CTkFrame(app, height=80)
+    header.pack(fill="x")
+    ctk.CTkLabel(header, text="IMPROVE - MAKE LIFE BETTER", text_color="white",
+                 fg_color="#FF5722", corner_radius=0, font=ctk.CTkFont(size=24, weight="bold")).pack(pady=20)
+
+    content = ctk.CTkFrame(app)
+    content.pack(fill="both", expand=True)
+
+    sidebar = ctk.CTkFrame(content, width=200, fg_color="#FF5722")
+    sidebar.pack(side="left", fill="y")
+
+    main_area = ctk.CTkFrame(content, fg_color="white")
+    main_area.pack(side="right", fill="both", expand=True)
+
+    def go_to_home():
+        print("Navigating to Home...")
+        for widget in main_area.winfo_children():
+            widget.destroy()
+
+    def goal_planner():
+        print("Opening Goal Planner...")
+        for widget in main_area.winfo_children():
+            widget.destroy()
+
+    def habit_builder():
+        print("Launching Habit Builder...")
+        for widget in main_area.winfo_children():
+            widget.destroy()
+
+    def pomodoro_timer():
+        print("Starting Pomodoro Timer...")
+        for widget in main_area.winfo_children():
+            widget.destroy()
+        PomodoroApp(master=main_area)
+
+    buttons = [
+        ("Home", go_to_home),
+        ("Goal Planner", goal_planner),
+        ("Habit Builder", habit_builder),
+        ("Pomodoro Timer", pomodoro_timer)
+    ]
+
+    for txt, cmd in buttons:
+        ctk.CTkButton(sidebar, text=txt, command=cmd,
+                      fg_color="#F4511E", hover_color="#D84315",
+                      text_color="white", font=("Arial", 14)).pack(pady=10, fill="x", padx=10)
+
+    sections = [
+        "Your Planner Progression",
+        "Weekly Habit Track",
+        "Pomodoro Timer - Build Your Focus",
+        "Got Something in Mind? Write it Down."
+    ]
+
+    for section in sections:
+        frame = ctk.CTkFrame(main_area, fg_color="#FFEBEE", border_color="#FFCDD2", border_width=2)
+        frame.pack(pady=20, padx=20, fill="x")
+        ctk.CTkButton(frame, text=section, fg_color="white", text_color="black",
+                      font=ctk.CTkFont(family="Times New Roman", size=18, weight="bold"), hover=False).pack(anchor="w", padx=20, pady=10)
+
+def run_app():
+    global app
+    ctk.set_appearance_mode("light")
+    ctk.set_default_color_theme("blue")
+
+    app = ctk.CTk()
+    app.title("IMPROVE - MAKE LIFE BETTER")
+    app.geometry("1000x700")
+    show_login()
+    app.mainloop()
+
+run_app()
