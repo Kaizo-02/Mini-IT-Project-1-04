@@ -4,6 +4,7 @@ class PomodoroApp(ctk.CTkFrame):
     def __init__(self, master=None, user_id=None):
         super().__init__(master)
         self.pack(fill="both", expand=True)
+        self.user_id = user_id
 
         # Session settings
         self.sessions = [("Work", 25 * 60), ("Break", 5 * 60)]
