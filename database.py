@@ -19,6 +19,7 @@ def create_tables():
 
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS goals (
+<<<<<<< HEAD
         goal TEXT NOT NULL UNIQUE,
 	    due_date TEXT NOT NULL UNIQUE,
 	    description TEXT UNIQUE,
@@ -46,6 +47,37 @@ def create_tables():
 	    completed INTEGER NOT NULL DEFAULT 1,
         user_id INTEGER NOT NULL UNIQUE
         FOREIGN KEY(user_id) REFERENCES users(id)           
+=======
+            goal TEXT NOT NULL,
+            due_date TEXT NOT NULL,
+            description TEXT UNIQUE,
+            goal_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            FOREIGN KEY(user_id) REFERENCES users(id)
+        )
+    ''')
+
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS habits (
+            habit_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            description TEXT NOT NULL,
+            habit_name TEXT NOT NULL,
+            user_id INTEGER NOT NULL UNIQUE,
+            FOREIGN KEY(user_id) REFERENCES users(id)
+        )
+    ''')
+
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS timers (
+            task_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            task TEXT NOT NULL,
+            start_time TEXT NOT NULL,
+            end_time TEXT NOT NULL,
+            duration INTEGER NOT NULL,
+            completed INTEGER NOT NULL DEFAULT 1,
+            user_id INTEGER NOT NULL UNIQUE,
+            FOREIGN KEY(user_id) REFERENCES users(id)
+>>>>>>> b28d83939d1ec9666ed2e15b94397b0e43d04f8b
         )
     ''')
 
@@ -53,5 +85,10 @@ def create_tables():
     conn.close()
     print("Database and tables created successfully.")
 
+<<<<<<< HEAD
     if __name__ == '__main__':
         create_tables()
+=======
+if __name__ == '__main__':
+    create_tables()
+>>>>>>> b28d83939d1ec9666ed2e15b94397b0e43d04f8b
