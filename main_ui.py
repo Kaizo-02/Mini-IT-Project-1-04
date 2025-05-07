@@ -20,6 +20,7 @@ def add_placeholder(entry, placeholder, is_password=False):
         if is_password:
             entry.configure(show="")
 
+# ----------------------------------------------------------------CODE UNTUK LOGIN-----------------------------------------------------------------
 def login():
     username = e1.get()
     password = e2.get()
@@ -74,6 +75,7 @@ def show_login():
     ctk.CTkButton(app, text="Register", command=show_register,
                   fg_color="#FF5722", text_color="white", font=("Arial", 14, "bold")).pack(pady=5)
 
+# ----------------------------------------------------------------CODE UNTUK REGISTER----------------------------------------------------------------
 def show_register():
     for widget in app.winfo_children():
         widget.destroy()
@@ -105,11 +107,11 @@ def show_register():
     ctk.CTkButton(app, text="Back to Login", command=show_login,
                   fg_color="#FF5722", text_color="white", font=("Arial", 14, "bold")).pack(pady=5)
 
+
 def show_main(user_id):
     for widget in app.winfo_children():
         widget.destroy()
 
-    # Header
     header = ctk.CTkFrame(app, height=60, fg_color="#FF5722")
     header.pack(fill="x")
 
@@ -119,16 +121,13 @@ def show_main(user_id):
     title = ctk.CTkLabel(header, text="IMPROVE - MAKE LIFE BETTER", font=ctk.CTkFont(size=20, weight="bold"), text_color="white", fg_color="#FF5722")
     title.pack(pady=10)
 
-    # Wrapper
     wrapper = ctk.CTkFrame(app)
     wrapper.pack(fill="both", expand=True)
 
-    # Sidebar
     sidebar = ctk.CTkFrame(wrapper, width=0, fg_color="#FF5722")
     sidebar.pack(side="left", fill="y")
     sidebar.pack_propagate(False)
 
-    # Main Area
     main_area = ctk.CTkFrame(wrapper, fg_color="white")
     main_area.pack(side="right", fill="both", expand=True)
 
@@ -192,12 +191,39 @@ def show_main(user_id):
 
     def habit_builder():
         clear_main_area()
-        ctk.CTkLabel(main_area, text="Your Habits", font=("Arial", 18, "bold")).pack(pady=10)
+
+        title = ctk.CTkLabel(main_area, text="Habit Builder", font=ctk.CTkFont(size=48, weight="bold"), text_color="black")
+        title.pack(anchor="nw", padx=20, pady=(20, 10))
+
+        create_btn = ctk.CTkButton(main_area, text="Create new habit +", fg_color="#d9d9d9", text_color="black", hover_color="#cccccc")
+        create_btn.pack(anchor="nw", padx=20, pady=(0, 20))
 
         habits = get_habits(user_id)
         for habit in habits:
-            habit_text = f"{habit[2]} - {habit[1]}"
-            ctk.CTkLabel(main_area, text=habit_text).pack(anchor="w", padx=20)
+            habit_card = ctk.CTkFrame(main_area, fg_color="#d9d9d9", corner_radius=10)
+            habit_card.pack(anchor="nw", padx=20, pady=10, fill="x")
+
+            habit_title = ctk.CTkLabel(habit_card, text=habit[2], font=ctk.CTkFont(size=24, slant="italic"), text_color="black")
+            habit_title.pack(anchor="nw", padx=10, pady=(10, 0))
+
+            habit_subtext = ctk.CTkLabel(habit_card, text=habit[1], font=ctk.CTkFont(size=16), text_color="black")
+            habit_subtext.pack(anchor="nw", padx=10, pady=(0, 10))
+
+            days_frame = ctk.CTkFrame(habit_card, fg_color="#d9d9d9")
+            days_frame.pack(anchor="nw", padx=10, pady=10)
+
+            days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+            for day in days:
+                day_label = ctk.CTkLabel(days_frame, text=day, text_color="black", font=ctk.CTkFont(size=14))
+                day_label.pack(side="left", padx=10)
+
+            circle_frame = ctk.CTkFrame(habit_card, fg_color="#d9d9d9")
+            circle_frame.pack(anchor="nw", padx=10, pady=(0, 10))
+
+            circle_colors = ["#7d6b6b", "#d1b5b5", "#d1b5b5", "#7d6b6b", "#7d6b6b", "#7d6b6b", "#7d6b6b"]
+            for color in circle_colors:
+                circle = ctk.CTkButton(circle_frame, text="", width=30, height=30, corner_radius=15, fg_color=color, hover=False, state="disabled")
+                circle.pack(side="left", padx=10)
 
         name_entry = ctk.CTkEntry(main_area, placeholder_text="Habit Name")
         name_entry.pack(pady=5)
@@ -217,12 +243,11 @@ def show_main(user_id):
         clear_main_area()
         PomodoroApp(master=main_area)
 
-    # Sidebar buttons
     for txt, cmd in [("Home", go_to_home), ("Goal Planner", goal_planner), ("Habit Builder", habit_builder), ("Pomodoro Timer", pomodoro_timer)]:
         ctk.CTkButton(sidebar, text=txt, command=cmd, fg_color="#F4511E", hover_color="#D84315",
                       text_color="white", font=("Arial", 14)).pack(pady=10, fill="x", padx=10)
 
-    go_to_home()  # Default view
+    go_to_home()
 
 def run_app():
     global app
