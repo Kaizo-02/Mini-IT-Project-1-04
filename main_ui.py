@@ -283,7 +283,8 @@ def main_window():
         {"text": "Home", "command": go_to_home},
         {"text": "Goal Planner", "command": goal_planner},
         {"text": "Habit Builder", "command": habit_builder},
-        {"text": "Pomodoro Timer", "command": pomodoro_timer}
+        {"text": "Pomodoro Timer", "command": pomodoro_timer},
+        {"text": "Settings", "command": settings_page}
     ]:
         ctk.CTkButton(master=sidebar, text=btn["text"], fg_color="lightgray", hover_color="#FF7043", text_color="black",
                       font=("Inter", 25, "bold"), border_width=2, command=btn["command"]).pack(pady=(20, 0), padx=10, fill="x")
