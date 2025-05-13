@@ -1,9 +1,5 @@
-import sqlite3
 import customtkinter as ctk
-from tkinter import Toplevel
-from datetime import datetime
 
-# Setup
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
@@ -11,24 +7,7 @@ app = ctk.CTk()
 app.geometry("1000x600")
 app.title("Goal Planner")
 
-# ====================== DATABASE ==========================
-def initialize_database():
-    connection = sqlite3.connect("goal_planner.db")
-    cursor = connection.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS goals (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            due_date TEXT NOT NULL,
-            status TEXT DEFAULT 'In Progress'
-        )
-    """)
-    connection.commit()
-    connection.close()
-
-initialize_database()
-
-# ====================== SIDEBAR ===========================
+# Sidebar
 sidebar = ctk.CTkFrame(app, width=200, corner_radius=0, fg_color="#a94442")
 sidebar.pack(side="left", fill="y")
 
@@ -43,73 +22,52 @@ for text, command in buttons:
     btn = ctk.CTkButton(sidebar, text=text, command=command, width=180, fg_color="white", text_color="black")
     btn.pack(pady=5)
 
-# ====================== MAIN AREA ===========================
+# Main content
 content = ctk.CTkFrame(app)
 content.pack(side="left", fill="both", expand=True, padx=20, pady=20)
 
+# Title
 title = ctk.CTkLabel(content, text="Welcome to Goal Planner", font=("Georgia", 24, "bold"))
 title.pack(pady=10)
 
-# ====================== GOAL ENTRY ===========================
-goal_name_entry = ctk.CTkEntry(content, placeholder_text="Enter Goal Name")
-goal_name_entry.pack(pady=10)
+# Goal planner section function
+def create_goal_section(master, color, placeholder):
+    goal_frame = ctk.CTkFrame(master, fg_color="#d3d3d3")
+    goal_frame.pack(fill="x", pady=10)
 
-date_label = ctk.CTkLabel(content, text="Select Due Date:")
-date_label.pack()
-calendar = ctk.CTkEntry(content, placeholder_text="YYYY-MM-DD")  # Using entry to simulate calendar
-calendar.pack(pady=5)
+    # Goal input
+    goal_entry_frame = ctk.CTkFrame(goal_frame, fg_color=color)
+    goal_entry_frame.pack(fill="x")
 
-def add_goal():
-    goal_name = goal_name_entry.get()
-    due_date = calendar.get()
-    if goal_name.strip() and due_date.strip():
-        conn = sqlite3.connect("goal_planner.db")
-        cursor = conn.cursor()
-        cursor.execute("INSERT INTO goals (name, due_date) VALUES (?, ?)", (goal_name, due_date))
-        conn.commit()
-        conn.close()
-        goal_name_entry.delete(0, ctk.END)
-        calendar.delete(0, ctk.END)
-        progress_tracker(goal_name)
+    goal_entry_label = ctk.CTkLabel(goal_entry_frame, text="Goal:", font=("Arial", 18, "bold"), text_color="black")
+    goal_entry_label.pack(side="left", padx=10)
 
-submit_btn = ctk.CTkButton(content, text="Save Goal", command=add_goal)
-submit_btn.pack(pady=10)
+    goal_input = ctk.CTkEntry(goal_entry_frame, placeholder_text=placeholder)
+    goal_input.pack(side="left", fill="x", expand=True, padx=5, pady=5)
 
-def progress_tracker(goal_name):
-    win = Toplevel(app)
-    win.title(f"Tracking: {goal_name}")
-    win.geometry("400x200")
+    # Headers
+    header_frame = ctk.CTkFrame(goal_frame, fg_color="#d3d3d3")
+    header_frame.pack(fill="x")
 
-    label = ctk.CTkLabel(win, text=f"{goal_name}: 0% Complete")
-    label.pack(pady=10)
+    step_label = ctk.CTkLabel(header_frame, text="Step to take", font=("Arial", 14, "bold"))
+    step_label.pack(side="left", fill="x", expand=True)
 
-    bar = ctk.CTkProgressBar(win, orientation="horizontal", mode="determinate")
-    bar.pack(pady=10)
-    bar.set(0)
+    deadline_label = ctk.CTkLabel(header_frame, text="Deadline", font=("Arial", 14, "bold"), anchor="e")
+    deadline_label.pack(side="right", fill="x", expand=True)
 
-    def update():
-        val = bar.get()
-        new_val = min(1.0, val + 0.1)
-        bar.set(new_val)
-        label.configure(text=f"{goal_name}: {int(new_val * 100)}% Complete")
+    # Rows for steps
+    for _ in range(3):
+        row = ctk.CTkFrame(goal_frame, fg_color="#d3d3d3")
+        row.pack(fill="x", pady=2)
+        step_entry = ctk.CTkEntry(row, placeholder_text="Enter step")
+        step_entry.pack(side="left", fill="x", expand=True, padx=5)
+        deadline_entry = ctk.CTkEntry(row, placeholder_text="Deadline")
+        deadline_entry.pack(side="right", fill="x", expand=True, padx=5)
 
-    update_btn = ctk.CTkButton(win, text="Update Progress", command=update)
-    update_btn.pack(pady=10)
+# First Goal Section (Orange)
+create_goal_section(content, "#FFA500", "Type your goal here")
 
-def view_goals():
-    win = Toplevel(app)
-    win.title("Goal History")
-    win.geometry("400x400")
-
-    conn = sqlite3.connect("goal_planner.db")
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM goals")
-    for g in cursor.fetchall():
-        label = ctk.CTkLabel(win, text=f"{g[1]} - Due: {g[2]} - Status: {g[3]}")
-        label.pack()
-    conn.close()
-
-history_btn = ctk.CTkButton(content, text="View Goal History", command=view_goals)
-history_btn.pack(pady=10)
+# Second Goal Section (Green)
+create_goal_section(content, "#7CFC00", "Type your next goal here")
 
 app.mainloop()
