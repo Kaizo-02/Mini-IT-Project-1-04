@@ -257,6 +257,27 @@ def goal_planner_page(master, color, placeholder):
         deadline_entry = ctk.CTkEntry(row, placeholder_text="Deadline")
         deadline_entry.pack(side="right", fill="x", expand=True, padx=5)
 
+def restart_login():
+    global root1
+    root1 = ctk.CTk()
+    root1.title("IMPROVE - MAKE LIFE BETTER")
+    root1.geometry("1920x1080")
+
+    ctk.CTkLabel(root1, text="Welcome to IMPROVE", fg_color="#FF5722", text_color="white",
+                 font=("Inter", 90, "bold"), height=50).pack(fill="x")
+
+    e1 = ctk.CTkEntry(root1, width=300, font=("Inter", 20), placeholder_text="Your Username")
+    e1.pack(pady=20)
+
+    e2 = ctk.CTkEntry(root1, width=300, font=("Inter", 20), placeholder_text="Your Password", show="*")
+    e2.pack(pady=20)
+
+    ctk.CTkButton(root1, text="Login", fg_color="#FF5722", hover_color="#E64A19", text_color="white",
+                  font=("Inter", 45, "bold"), command=login).pack(pady=20)
+
+    root1.mainloop()
+
+
 
 # Main window function
 def main_window():
@@ -298,7 +319,7 @@ def main_window():
     def pomodoro_timer():
         clear_main_content()
         pomodoro_timer_page(main_content)
-
+#--------------------------------------------------------------------------settings page-------------------------------------------------------------------------------------------
     def settings_page():
         clear_main_content()
 
@@ -332,10 +353,18 @@ def main_window():
 
         ctk.CTkButton(main_content, text="Apply Settings", command=apply_settings).pack(pady=30)
 
+        def exit_to_login():
+            root2.destroy()     # Close the main window
+            restart_login()     # Show the login window again
+
+        ctk.CTkButton(main_content, text="Apply Settings", command=apply_settings).pack(pady=20)
+        ctk.CTkButton(main_content, text="Exit to Login", fg_color="#FF5722", hover_color="#E64A19",
+                      text_color="white", command=exit_to_login).pack(pady=10)
+
     def go_to_home():
         clear_main_content()
         main_content.configure(fg_color=main_bg_color[0])
-        ctk.CTkLabel(main_content, text="Home Page", font=("Inter", 95, "bold"), text_color="#2E86C1").pack(pady=40)
+        ctk.CTkLabel(main_content, text="Home Page", font=("Inter", 95, "bold"), text_color="#000000").pack(pady=40)
         btn_frame = ctk.CTkFrame(master=main_content, fg_color="transparent")
         btn_frame.pack(pady=20)
         for btn in [
