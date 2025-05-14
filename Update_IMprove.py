@@ -3,11 +3,11 @@ import customtkinter as ctk
 import tkinter.messagebox as messagebox
 
 # ---Set theme---
-ctk.set_appearance_mode("light")
+ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
 
 # Background color state
-main_bg_color = ["white"]
+main_bg_color = ["grey"]
 
 
 def habit_builder_page(main_content):
@@ -258,6 +258,7 @@ def goal_planner_page(master, color, placeholder):
         deadline_entry.pack(side="right", fill="x", expand=True, padx=5)
 
 
+# Main window function
 def main_window():
     global root2
     root2 = ctk.CTk()
@@ -303,16 +304,33 @@ def main_window():
 
         ctk.CTkLabel(main_content, text="Settings", font=("Inter", 95, "bold"), text_color="black").pack(pady=40)
 
+        # Background Color Option
         ctk.CTkLabel(main_content, text="Background Color:", font=("Inter", 20)).pack(pady=10)
         color_selector = ctk.CTkOptionMenu(main_content, values=["white", "#f0f0f0", "#fffae6", "#e6f7ff"])
-
-        def apply_color():
-            new_color = color_selector.get()
-            main_bg_color[0] = new_color
-            main_content.configure(fg_color=new_color)
-
         color_selector.pack(pady=10)
-        ctk.CTkButton(main_content, text="Apply Background Color", command=apply_color).pack(pady=20)
+
+        # Font Family Option
+        ctk.CTkLabel(main_content, text="Font Family:", font=("Inter", 20)).pack(pady=10)
+        font_family_selector = ctk.CTkOptionMenu(main_content, values=["Inter", "Arial", "Courier", "Times"])
+        font_family_selector.pack(pady=10)
+
+        # Font Size Option
+        ctk.CTkLabel(main_content, text="Font Size:", font=("Inter", 20)).pack(pady=10)
+        font_size_selector = ctk.CTkOptionMenu(main_content, values=["12", "16", "20", "24", "30"])
+        font_size_selector.pack(pady=10)
+
+        def apply_settings():
+            new_bg = color_selector.get()
+            new_font = font_family_selector.get()
+            new_font_size = int(font_size_selector.get())
+
+            main_bg_color[0] = new_bg
+            main_content.configure(fg_color=new_bg)
+
+            # Confirmation
+            messagebox.showinfo("Settings Applied", f"Background: {new_bg}\nFont: {new_font} {new_font_size}")
+
+        ctk.CTkButton(main_content, text="Apply Settings", command=apply_settings).pack(pady=30)
 
     def go_to_home():
         clear_main_content()
@@ -343,11 +361,10 @@ def main_window():
     go_to_home()
     root2.mainloop()
 
-
+# Login and startup
 def login():
     root1.destroy()
     main_window()
-
 
 # Login Window
 root1 = ctk.CTk()
