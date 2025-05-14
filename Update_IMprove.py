@@ -357,7 +357,6 @@ def main_window():
             root2.destroy()     # Close the main window
             restart_login()     # Show the login window again
 
-        ctk.CTkButton(main_content, text="Apply Settings", command=apply_settings).pack(pady=20)
         ctk.CTkButton(main_content, text="Exit to Login", fg_color="#FF5722", hover_color="#E64A19",
                       text_color="white", command=exit_to_login).pack(pady=10)
 
