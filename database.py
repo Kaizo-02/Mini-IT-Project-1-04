@@ -49,8 +49,8 @@ def create_tables():
         FOREIGN KEY(user_id) REFERENCES users(id)           
 =======
             goal TEXT NOT NULL,
-            due_date TEXT NOT NULL,
-            description TEXT UNIQUE,
+            due_date DATE NOT NULL,
+            description TEXT,
             goal_id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
             FOREIGN KEY(user_id) REFERENCES users(id)
@@ -71,8 +71,8 @@ def create_tables():
         CREATE TABLE IF NOT EXISTS timers (
             task_id INTEGER PRIMARY KEY AUTOINCREMENT,
             task TEXT NOT NULL,
-            start_time TEXT NOT NULL,
-            end_time TEXT NOT NULL,
+            start_time INTEGER NOT NULL,
+            end_time INTEGER NOT NULL,
             duration INTEGER NOT NULL,
             completed INTEGER NOT NULL DEFAULT 1,
             user_id INTEGER NOT NULL,
