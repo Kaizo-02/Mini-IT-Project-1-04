@@ -10,6 +10,7 @@ ctk.set_default_color_theme("blue")
 main_bg_color = ["grey"]
 
 
+
 def habit_builder_page(main_content):
     habits = []
 
@@ -247,6 +248,7 @@ def goal_planner_page(master, color, placeholder):
 
     deadline_label = ctk.CTkLabel(header_frame, text="Deadline", font=("Arial", 14, "bold"), anchor="e")
     deadline_label.pack(side="right", fill="x", expand=True)
+    
 
     # Rows for steps
     for _ in range(3):
@@ -326,18 +328,18 @@ def main_window():
         ctk.CTkLabel(main_content, text="Settings", font=("Inter", 95, "bold"), text_color="black").pack(pady=40)
 
         # Background Color Option
-        ctk.CTkLabel(main_content, text="Background Color:", font=("Inter", 20)).pack(pady=10)
-        color_selector = ctk.CTkOptionMenu(main_content, values=["white", "#f0f0f0", "#fffae6", "#e6f7ff"])
+        ctk.CTkLabel(main_content, text="Background Color:", font=("Inter", 40,), text_color="#000000").pack(pady=10)
+        color_selector = ctk.CTkOptionMenu(main_content, values=["white", "#000000", "#D3D3D3", "#5F9EA0"])
         color_selector.pack(pady=10)
 
         # Font Family Option
-        ctk.CTkLabel(main_content, text="Font Family:", font=("Inter", 20)).pack(pady=10)
+        ctk.CTkLabel(main_content, text="Font Family:", font=("Inter", 40), text_color="#000000").pack(pady=10)
         font_family_selector = ctk.CTkOptionMenu(main_content, values=["Inter", "Arial", "Courier", "Times"])
         font_family_selector.pack(pady=10)
 
         # Font Size Option
-        ctk.CTkLabel(main_content, text="Font Size:", font=("Inter", 20)).pack(pady=10)
-        font_size_selector = ctk.CTkOptionMenu(main_content, values=["12", "16", "20", "24", "30"])
+        ctk.CTkLabel(main_content, text="Font Size:", font=("Inter", 40), text_color="#000000").pack(pady=10)
+        font_size_selector = ctk.CTkOptionMenu(main_content, values=["12", "16", "32", "64", "128"])
         font_size_selector.pack(pady=10)
 
         def apply_settings():
@@ -347,6 +349,12 @@ def main_window():
 
             main_bg_color[0] = new_bg
             main_content.configure(fg_color=new_bg)
+
+            # Create new font and apply it to main content widgets
+            selected_font = ctk.CTkFont(family=new_font, size=new_font_size)
+            for widget in main_content.winfo_children():
+                if isinstance(widget, ctk.CTkLabel) or isinstance(widget, ctk.CTkButton):
+                    widget.configure(font=selected_font)
 
             # Confirmation
             messagebox.showinfo("Settings Applied", f"Background: {new_bg}\nFont: {new_font} {new_font_size}")
