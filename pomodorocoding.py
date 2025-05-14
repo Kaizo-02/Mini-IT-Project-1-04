@@ -1,57 +1,92 @@
 import customtkinter as ctk
+  
+ctk.set_appearance_mode("light")
+ctk.set_default_color_theme("blue")
 
-class PomodoroApp(ctk.CTkFrame):
-    def __init__(self, master=None, user_id=None):
-        super().__init__(master)
-        self.pack(fill="both", expand=True)
-        self.user_id = user_id
+class PomodoroApp(ctk.CTk):
+    def __init__(self):
+        super().__init__()
+        self.title("IMPROVE - MAKE LIFE BETTER")
+        self.geometry("1920x1080")
+        self.resizable(True, True)
+        self.grid_rowconfigure(0, weight=1)  # content row expands
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_columnconfigure(1, weight=1)
 
-        # Session settings
-        self.sessions = [("Work", 25 * 60), ("Break", 5 * 60)]
+        # Header
+        header = ctk.CTkFrame(master=self, height=50, fg_color="white")
+        header.grid(row=0, column=0, columnspan=2, sticky="nsew")
+        
+        ctk.CTkLabel(
+            master=header,
+            text="IMPROVE - MAKE LIFE BETTER",
+            fg_color="red",
+            text_color="white",
+            font=("Inter", 70, "bold")
+        ).place(relx=0.5, rely=0.5, anchor="center")
+
+        # Sidebar
+        sidebar = ctk.CTkFrame(master=self, width=200, fg_color="red")
+        sidebar.grid(row=1, column=0, sticky="nsew")
+        self.grid_rowconfigure(1, weight=1)
+        self.grid_columnconfigure(0, weight=0)
+        for name in ["Home", "Goal Planner", "Habit builder", "Pomodoro timer"]:
+            ctk.CTkButton(
+                master=sidebar,
+                text=name,
+                fg_color="lightgray",
+                hover_color="#FF7043",
+                text_color="black",
+                font=("Inter", 25, "bold"),
+                border_width=2,
+                command=lambda t=name: self.on_menu(t)
+            ).pack(pady=(20, 0), padx=10, fill="x")
+
+        # Main Content
+        content = ctk.CTkFrame(master=self, fg_color="white")
+        content.grid(row=1, column=1, sticky="nsew")
+
+        self.sessions = [("Work", 1 * 3), ("Break", 1 * 3)]
         self.session_index = 0
         self.time_left = self.sessions[self.session_index][1]
         self.running = False
         self.session_counter = 0
 
-        # Work/Break title
         self.session_label = ctk.CTkLabel(
-            master=self,
+            master=content,
             text="Work Session",
-            font=("Inter", 50, "bold"),
+            font=("Inter", 150 , "bold"),
             text_color="#2E86C1"
         )
-        self.session_label.pack(pady=20)
+        self.session_label.pack(pady=30)
 
-        # Timer label
         self.timer_label = ctk.CTkLabel(
-            master=self,
+            master=content,
             text=self._format_time(self.time_left),
-            font=("Inter", 80),
+            font=("Inter", 200),
             text_color="#A3A1A1"
         )
         self.timer_label.pack(pady=20)
 
-        # Sessions completed
         self.counter_label = ctk.CTkLabel(
-            master=self,
+            master=content,
             text=f"Sessions Completed: {self.session_counter}",
-            font=("Inter", 20),
+            font=("Inter", 24),
             text_color="#555555"
         )
         self.counter_label.pack(pady=10)
 
-        # Button Frame
-        btn_frame = ctk.CTkFrame(master=self, fg_color="transparent")
+        btn_frame = ctk.CTkFrame(master=content, fg_color="transparent")
         btn_frame.pack(pady=20)
 
         self.start_button = ctk.CTkButton(
             master=btn_frame,
             text="Start",
-            width=200,
-            height=60,
-            font=("Inter", 20, "bold"),
-            fg_color="#2E86C1",
-            hover_color="#1F618D",
+            width=300,
+            height=100,
+            font=("Inter", 30, "bold"),
+            fg_color="#A3A1A1",
+            hover_color="#8F8D8D",
             text_color="white",
             command=self.start_timer
         )
@@ -60,9 +95,9 @@ class PomodoroApp(ctk.CTkFrame):
         self.reset_button = ctk.CTkButton(
             master=btn_frame,
             text="Reset",
-            width=200,
-            height=60,
-            font=("Inter", 20, "bold"),
+            width=300,
+            height=100,
+            font=("Inter", 30, "bold"),
             fg_color="#A3A1A1",
             hover_color="#8F8D8D",
             text_color="white",
@@ -70,18 +105,25 @@ class PomodoroApp(ctk.CTkFrame):
         )
         self.reset_button.pack(side="left", padx=20)
 
-        # Status
         self.status_label = ctk.CTkLabel(
-            master=self,
+            master=content,
             text="Ready",
-            font=("Inter", 16),
+            font=("Inter", 20),
             text_color="#888888"
         )
         self.status_label.pack(pady=10)
 
+    def on_menu(self, selection):
+        if selection == "Home":
+            self.destroy()
+            from main_ui import main_window
+            main_window()
+        else:
+            print(f"Menu clicked: {selection}")
+
     def _format_time(self, seconds):
-        minutes, secs = divmod(seconds, 60)
-        return f"{minutes:02}:{secs:02}"
+        m, s = divmod(seconds, 60)
+        return f"{m:02d}:{s:02d}"
 
     def start_timer(self):
         if not self.running:
@@ -107,14 +149,11 @@ class PomodoroApp(ctk.CTkFrame):
         self._update_session_label()
 
     def _switch_session(self):
-        # Count completed work sessions only
         if self.sessions[self.session_index][0] == "Work":
             self.session_counter += 1
             self.counter_label.configure(
                 text=f"Sessions Completed: {self.session_counter}"
             )
-
-        # Switch to next session (work <-> break)
         self.session_index = (self.session_index + 1) % len(self.sessions)
         name, duration = self.sessions[self.session_index]
         self.time_left = duration
@@ -125,6 +164,6 @@ class PomodoroApp(ctk.CTkFrame):
     def _update_session_label(self):
         name = self.sessions[self.session_index][0]
         if name == "Work":
-            self.session_label.configure(text="Work Session", text_color="#2E86C1")
+            self.session_label.configure(text="Work Session", text_color="#A3A1A1")
         else:
             self.session_label.configure(text="Break Time", text_color="#27AE60")

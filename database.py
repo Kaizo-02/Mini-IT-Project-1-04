@@ -33,7 +33,7 @@ def create_tables():
             habit_id INTEGER PRIMARY KEY AUTOINCREMENT,
             description TEXT NOT NULL,
             habit_name TEXT NOT NULL,
-            user_id INTEGER NOT NULL UNIQUE,
+            user_id INTEGER NOT NULL,
             FOREIGN KEY(user_id) REFERENCES users(id)
         )
     ''')
@@ -46,7 +46,7 @@ def create_tables():
             end_time TEXT NOT NULL,
             duration INTEGER NOT NULL,
             completed INTEGER NOT NULL DEFAULT 1,
-            user_id INTEGER NOT NULL UNIQUE,
+            user_id INTEGER NOT NULL,
             FOREIGN KEY(user_id) REFERENCES users(id)
         )
     ''')
