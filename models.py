@@ -57,30 +57,74 @@ def get_habits(user_id):
     conn.close()
     return habits
 
-def add_timers(task_name, start_time, end_time, duration, completed, user_id):
+DATABASE = 'mydatabase.db'
+
+def create_connection():
+    conn = sqlite3.connect(DATABASE, check_same_thread=False)
+    conn.execute("PRAGMA foreign_keys = ON")
+    return conn
+
+def user_exists(user_id: int) -> bool:
     try:
-        # Code that might raise an exception (e.g., database insert)
-        conn = sqlite3.connect('your_database.db', check_same_thread=False)
-        cursor = conn.cursor()
-        cursor.execute("""
-        INSERT INTO timers (user_id, task_name, start_time, end_time, duration, completed)
-        VALUES (?, ?, ?, ?, ?, ?)
-        """, (user_id, task_name, start_time, end_time, duration, completed))
-        conn.commit()
-
+        with create_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT 1 FROM users WHERE id = ?", (user_id,))
+            return cursor.fetchone() is not None
     except sqlite3.Error as e:
-        print(f"Error inserting timer: {e}")
+        print(f"Error checking user existence: {e}")
+        return False
 
-    finally:
-        conn.close()
+def add_timers(task, start_time, end_time, duration, completed, user_id):
+    print(f"DEBUG: Inserting timer for user {user_id} task '{task}'")
+    try:
+        with create_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO timers (task, start_time, end_time, duration, completed, user_id)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (task, start_time, end_time, duration, completed, user_id))
+            conn.commit()
+        print("DEBUG: Timer inserted successfully")
+    except Exception as e:
+        print("DEBUG: Failed to insert timer:", e)
 
-def timers(user_id):
-    conn = create_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM timers WHERE user_id = ?", (user_id,))
-    sessions = cursor.fetchall()
-    conn.close()
-    return sessions
+
+def timers(user_id: int):
+    try:
+        with create_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM timers WHERE user_id = ?", (user_id,))
+            sessions = cursor.fetchall()
+        return sessions
+    except sqlite3.Error as e:
+        print(f"Error fetching timers: {e}")
+        return []
+
+def save_timer_mode(mode_name: str, focus_duration: int, rest_duration: int, user_id: int):
+    try:
+        with create_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT OR IGNORE INTO timer_modes (mode_name, focus_duration, rest_duration, user_id)
+                VALUES (?, ?, ?, ?)
+            """, (mode_name, focus_duration, rest_duration, user_id))
+            conn.commit()
+        print(f"Saved timer mode '{mode_name}' for user {user_id}")
+    except Exception as e:
+        print("Error saving timer mode:", e)
+
+def load_timer_modes(user_id: int):
+    try:
+        with create_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT mode_name, focus_duration, rest_duration FROM timer_modes WHERE user_id = ?
+            """, (user_id,))
+            rows = cursor.fetchall()
+        return {row[0]: [("Focus", row[1]), ("Rest", row[2])] for row in rows}
+    except Exception as e:
+        print("Error loading timer modes:", e)
+        return {}
 
 
 

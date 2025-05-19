@@ -1,8 +1,10 @@
 import customtkinter as ctk
 from pomodorocoding import PomodoroApp
-from models import add_user, get_users, add_goal, get_goals, add_habit, get_habits
+from models import add_user, get_users, add_goal, get_goals, add_habit, get_habits, add_timers, timers, user_exists, save_timer_mode, load_timer_modes
 from argon2 import PasswordHasher
 from tkinter import messagebox
+from datetime import datetime
+import sqlite3
 
 ph = PasswordHasher()
 
@@ -132,15 +134,15 @@ def show_main(user_id):
 
     main_area = ctk.CTkFrame(wrapper, fg_color="white")
     main_area.pack(side="right", fill="both", expand=True)
-    main_content = main_area
+    main_area = main_area
 
-    ctk.CTkButton(sidebar, text="Home Page", command=lambda: go_to_home(main_content),
+    ctk.CTkButton(sidebar, text="Home Page", command=lambda: go_to_home(main_area),
               fg_color="#F4511E", text_color="white").pack(pady=10, fill="x", padx=10)
-    ctk.CTkButton(sidebar, text="Goal Planner", command=lambda: goal_planner(main_content),
+    ctk.CTkButton(sidebar, text="Goal Planner", command=lambda: goal_planner(main_area),
               fg_color="#F4511E", text_color="white").pack(pady=10, fill="x", padx=10)
-    ctk.CTkButton(sidebar, text="Pomodoro Timer", command=lambda: pomodoro_timer_page(main_content),
+    ctk.CTkButton(sidebar, text="Habit Builder", command=lambda: habit_builder_page(main_area, user_id),
               fg_color="#F4511E", text_color="white").pack(pady=10, fill="x", padx=10)
-    ctk.CTkButton(sidebar, text="Habit Builder", command=lambda: habit_builder_page(main_content),
+    ctk.CTkButton(sidebar, text="Pomodoro Timer", command=lambda: pomodoro_timer_page(main_area, user_id),
               fg_color="#F4511E", text_color="white").pack(pady=10, fill="x", padx=10)
 
     sidebar_state = {"visible": False}
@@ -171,11 +173,11 @@ def show_main(user_id):
         for widget in main_area.winfo_children():
             widget.destroy()
 
-    def go_to_home(main_content):
+    def go_to_home(main_area):
         clear_main_area()
         ctk.CTkLabel(main_area, text="Home Page", font=("Arial", 18, "bold")).pack(pady=10)
     
-    def goal_planner(main_content):
+    def goal_planner(main_area):
         clear_main_area()
         ctk.CTkLabel(main_area, text="Your Goals", font=("Arial", 18, "bold")).pack(pady=10)
 
@@ -200,12 +202,22 @@ def show_main(user_id):
                 goal_planner()
 
         ctk.CTkButton(main_area, text="Add Goal", command=lambda: [add_goal(user_id, goal_entry.get(), desc_entry.get(), due_entry.get()), goal_planner(main_area)], fg_color="#F4511E", text_color="white").pack(pady=10)
-
-    habits = []
     
-    def habit_builder_page(main_content):
-        clear_main_area()
-        ctk.CTkLabel(main_area, text="Habit Builder", font=("Arial", 18, "bold")).pack(pady=10)
+    def habit_builder_page(main_content, user_id):
+        for widget in main_content.winfo_children():
+            widget.destroy()
+
+        # Load habits from the database
+        raw_habits = get_habits(user_id)
+
+        # Transform habits into the format used by the UI
+        habits = []
+        for habit in raw_habits:
+            habits.append({
+                "title": habit[2],  # habit_name
+                "description": habit[1],  # description
+                "days": {day: False for day in ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]}
+            })
 
         def draw_habits():
             for widget in habit_list_frame.winfo_children():
@@ -223,22 +235,22 @@ def show_main(user_id):
 
                 days_frame = ctk.CTkFrame(habit_card, fg_color="#d9d9d9")
                 days_frame.pack(anchor="nw", padx=10, pady=10)
-            for day in habit["days"]:
-                ctk.CTkLabel(days_frame, text=day, text_color="black", font=ctk.CTkFont(size=14)).pack(side="left", padx=10)
+                for day in habit["days"]:
+                    ctk.CTkLabel(days_frame, text=day, text_color="black", font=ctk.CTkFont(size=14)).pack(side="left", padx=10)
 
-            circle_frame = ctk.CTkFrame(habit_card, fg_color="#d9d9d9")
-            circle_frame.pack(anchor="nw", padx=10, pady=(0, 10))
+                circle_frame = ctk.CTkFrame(habit_card, fg_color="#d9d9d9")
+                circle_frame.pack(anchor="nw", padx=10, pady=(0, 10))
 
-            def make_toggle_func(h, d):
-                def toggle():
-                    h["days"][d] = not h["days"][d]
-                    draw_habits()
-                return toggle
+                def make_toggle_func(habit, day):
+                    def toggle():
+                        habit["days"][day] = not habit["days"][day]
+                        draw_habits()
+                    return toggle
 
-            for day in habit["days"]:
-                color = "#7d6b6b" if habit["days"][day] else "#d1b5b5"
-                ctk.CTkButton(circle_frame, text="", width=30, height=30, corner_radius=15, fg_color=color,
-                              hover=False, command=make_toggle_func(habit, day)).pack(side="left", padx=10)
+                for day in habit["days"]:
+                    color = "#7d6b6b" if habit["days"][day] else "#d1b5b5"
+                    ctk.CTkButton(circle_frame, text="", width=30, height=30, corner_radius=15, fg_color=color,
+                                hover=False, command=make_toggle_func(habit, day)).pack(side="left", padx=10)
 
         def open_add_habit_popup():
             popup = ctk.CTkToplevel()
@@ -253,11 +265,12 @@ def show_main(user_id):
 
             def save_habit():
                 title = title_entry.get().strip()
-                desc = desc_entry.get().strip()
+                desc = desc_entry.get().strip() or "No description"
                 if title:
+                    add_habit(desc, title, user_id)  # Save to DB
                     habits.append({
                         "title": title,
-                        "description": desc or "No description",
+                        "description": desc,
                         "days": {day: False for day in ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]}
                     })
                     draw_habits()
@@ -269,7 +282,7 @@ def show_main(user_id):
         title.pack(anchor="nw", padx=20, pady=(20, 10))
 
         create_btn = ctk.CTkButton(main_content, text="Create new habit +", fg_color="#d9d9d9", text_color="black",
-                                hover_color="#cccccc", command=open_add_habit_popup)
+                                    hover_color="#cccccc", command=open_add_habit_popup)
         create_btn.pack(anchor="nw", padx=20, pady=(0, 20))
 
         habit_list_frame = ctk.CTkFrame(main_content, fg_color="white")
@@ -277,79 +290,86 @@ def show_main(user_id):
 
         draw_habits()
 
-    def pomodoro_timer_page(main_content):
-        ctk.CTkLabel(main_area, text="Habit Builder", font=("Arial", 18, "bold")).pack(pady=10)
-    # Clear the current content of the main_content
+    def pomodoro_timer_page(main_content, user_id):
         for widget in main_content.winfo_children():
             widget.destroy()
-            timer_job = None
 
-
-    # Define the timer's session modes (work and break)
+        # Load saved modes from DB and merge with defaults
+        saved_modes = load_timer_modes(user_id)
         timer_modes = {
-            "Pomodoro": [("Work", 25 * 60), ("Break", 5 * 60)],
-            "Valorant": [("Focus", 50 * 60), ("Rest", 10 * 60)],
-            "Testing": [("Focus", 3), ("Rest", 3)]
+            "Pomodoro": [("Work", 25 * 60), ("Break", 5 * 60)]
         }
+        timer_modes.update(saved_modes)  # Add custom modes from DB to the default ones
+
         current_mode = ["Pomodoro"]
         sessions = timer_modes[current_mode[0]]
         session_index = [0]
         time_left = [sessions[session_index[0]][1]]
         running = [False]
         session_counter = [0]
+        session_start = [None]
 
-    # Function to format time in MM:SS
         def _format_time(seconds):
             m, s = divmod(seconds, 60)
             return f"{m:02d}:{s:02d}"
 
-    # Function to update the session label based on the current session
         def _update_session_label():
             name = sessions[session_index[0]][0]
             session_label.configure(text="Work Session" if name in ["Work", "Focus"] else "Break Time",
-                                text_color="#2E86C1" if name in ["Work", "Focus"] else "#27AE60")
+                                    text_color="#2E86C1" if name in ["Work", "Focus"] else "#27AE60")
 
-    # Function to switch between sessions (Work/Focus, Break/Rest)
         def _switch_session():
-            if sessions[session_index[0]][0] in ["Work", "Focus"]:
-                session_counter[0] += 1
-                counter_label.configure(text=f"Sessions Completed: {session_counter[0]}")
+            prev_session_name = sessions[session_index[0]][0]
+            end_time = int(datetime.now().timestamp())
+            if prev_session_name in ["Work", "Focus"]:
+                start_time_val = session_start[0] if session_start[0] else end_time
+                duration = end_time - start_time_val
+                completed = 1
+                task = current_mode[0] + " - " + prev_session_name
+                try:
+                    add_timers(task, start_time_val, end_time, duration, completed, user_id)
+                    print(f"Session saved: {task}, {start_time_val}, {end_time}, {duration}, {user_id}")
+                except Exception as e:
+                    print("Error saving timer:", e)
+
             session_index[0] = (session_index[0] + 1) % len(sessions)
             time_left[0] = sessions[session_index[0]][1]
+
             _update_session_label()
             timer_label.configure(text=_format_time(time_left[0]))
             status_label.configure(text=f"{sessions[session_index[0]][0]} starting...")
 
-    # Countdown function for the timer
+            if sessions[session_index[0]][0] in ["Work", "Focus"]:
+                session_start[0] = int(datetime.now().timestamp())
+            else:
+                session_start[0] = None
+
         def _countdown():
             if running[0] and time_left[0] > 0:
                 time_left[0] -= 1
                 timer_label.configure(text=_format_time(time_left[0]))
-                timer_job[0] = main_content.after(1000, _countdown)
+                main_content.after(1000, _countdown)
             elif running[0]:
                 running[0] = False
                 status_label.configure(text="Session Complete!")
                 _switch_session()
 
-    # Start the timer
         def start_timer():
             if not running[0]:
                 running[0] = True
+                session_type = sessions[session_index[0]][0]
+                if session_type in ["Work", "Focus"]:
+                    session_start[0] = int(datetime.now().timestamp())
                 status_label.configure(text="Running...")
                 _countdown()
 
-    # Reset the timer
         def reset_timer():
             running[0] = False
             time_left[0] = sessions[session_index[0]][1]
             timer_label.configure(text=_format_time(time_left[0]))
             status_label.configure(text="Reset")
             _update_session_label()
-            if timer_job[0]:
-                main_content.after_cancel(timer_job[0])
-                timer_job[0] = None
 
-    # Switch the timer mode (Pomodoro, Valorant, Testing, etc.)
         def switch_mode(new_mode):
             nonlocal sessions
             running[0] = False
@@ -362,8 +382,8 @@ def show_main(user_id):
             _update_session_label()
             timer_label.configure(text=_format_time(time_left[0]))
             status_label.configure(text=f"{new_mode} Mode Selected")
+            session_start[0] = None
 
-    # Add a custom timer mode
         def add_custom_timer():
             popup = ctk.CTkToplevel()
             popup.title("Add Custom Timer")
@@ -383,6 +403,9 @@ def show_main(user_id):
                     focus_min = int(focus_entry.get().strip())
                     rest_min = int(rest_entry.get().strip())
                     if name and focus_min > 0 and rest_min > 0:
+                        # Save to DB
+                        save_timer_mode(name, focus_min * 60, rest_min * 60, user_id)
+                        # Update in-memory dict & UI
                         timer_modes[name] = [("Focus", focus_min * 60), ("Rest", rest_min * 60)]
                         mode_options.append(name)
                         mode_menu.configure(values=mode_options)
@@ -394,48 +417,76 @@ def show_main(user_id):
 
             ctk.CTkButton(popup, text="Save Timer", command=save_custom).pack(pady=20)
 
-        # UI Layout for Pomodoro Page
         top_frame = ctk.CTkFrame(main_content, fg_color="transparent")
         top_frame.pack(anchor="nw", padx=20, pady=10)
 
-        # Mode options dropdown
+        ctk.CTkLabel(top_frame, text="Mode:", font=("Inter", 18, "bold")).pack(side="left", padx=(0, 5))
+
         mode_options = list(timer_modes.keys())
         mode_menu = ctk.CTkOptionMenu(top_frame, values=mode_options, command=switch_mode)
-        mode_menu.pack(side="left", padx=10)
+        mode_menu.pack(side="left", padx=5)
 
-        # Button to add custom timer
-        add_timer_btn = ctk.CTkButton(top_frame, text="+ Add Timer", command=add_custom_timer)
-        add_timer_btn.pack(side="left", padx=10)
+        ctk.CTkButton(top_frame, text="+ Add Custom Timer", command=add_custom_timer,
+                    fg_color="#A3A1A1", hover_color="#8F8D8D", text_color="white").pack(side="left", padx=10)
 
-        # Timer frame
-        timer_frame = ctk.CTkFrame(main_content)
-        timer_frame.pack(expand=True)
+        timer_frame = ctk.CTkFrame(main_content, fg_color="transparent")
+        timer_frame.pack(expand=True, fill="both")
 
-        # Session label
-        session_label = ctk.CTkLabel(timer_frame, text="", font=ctk.CTkFont(size=24, weight="bold"))
-        session_label.pack(pady=10)
+        session_label = ctk.CTkLabel(timer_frame, text="Work Session", font=("Inter", 95, "bold"), text_color="#2E86C1")
+        session_label.pack(pady=30)
 
-        # Timer label
-        timer_label = ctk.CTkLabel(timer_frame, text=_format_time(time_left[0]), font=ctk.CTkFont(size=60, weight="bold"))
-        timer_label.pack(pady=10)
+        timer_label = ctk.CTkLabel(timer_frame, text=_format_time(time_left[0]), font=("Inter", 200), text_color="#A3A1A1")
+        timer_label.pack(pady=20)
 
-        # Status label
-        status_label = ctk.CTkLabel(timer_frame, text="Ready", font=ctk.CTkFont(size=18))
-        status_label.pack(pady=5)
+        counter_label = ctk.CTkLabel(timer_frame, text=f"Sessions Completed: {session_counter[0]}", font=("Inter", 24), text_color="#555555")
+        counter_label.pack(pady=10)
 
-        # Counter label
-        counter_label = ctk.CTkLabel(timer_frame, text="Sessions Completed: 0", font=ctk.CTkFont(size=18))
-        counter_label.pack(pady=5)
+        btn_frame = ctk.CTkFrame(timer_frame, fg_color="transparent")
+        btn_frame.pack(pady=20)
 
-        # Control buttons
-        control_frame = ctk.CTkFrame(timer_frame)
-        control_frame.pack(pady=10)
+        ctk.CTkButton(btn_frame, text="Start", width=300, height=100, font=("Inter", 30, "bold"), fg_color="#A3A1A1",
+                    hover_color="#8F8D8D", text_color="white", command=start_timer).pack(side="left", padx=20)
 
-        start_btn = ctk.CTkButton(control_frame, text="Start", command=start_timer)
-        start_btn.pack(side="left", padx=10)
+        ctk.CTkButton(btn_frame, text="Reset", width=300, height=100, font=("Inter", 30, "bold"), fg_color="#A3A1A1",
+                    hover_color="#8F8D8D", text_color="white", command=reset_timer).pack(side="left", padx=20)
 
-        reset_btn = ctk.CTkButton(control_frame, text="Reset", command=reset_timer)
-        reset_btn.pack(side="left", padx=10)
+        status_label = ctk.CTkLabel(timer_frame, text="Ready", font=("Inter", 20), text_color="#888888")
+        status_label.pack(pady=10)
+
+        _update_session_label()
+
+    def goal_planner_page(master, color, placeholder):
+        goal_frame = ctk.CTkFrame(master, fg_color="#d3d3d3")
+        goal_frame.pack(fill="x", pady=10)
+
+        # Goal input
+        goal_entry_frame = ctk.CTkFrame(goal_frame, fg_color=color)
+        goal_entry_frame.pack(fill="x")
+
+        goal_entry_label = ctk.CTkLabel(goal_entry_frame, text="Goal:", font=("Arial", 18, "bold"), text_color="black")
+        goal_entry_label.pack(side="left", padx=10)
+
+        goal_input = ctk.CTkEntry(goal_entry_frame, placeholder_text=placeholder)
+        goal_input.pack(side="left", fill="x", expand=True, padx=5, pady=5)
+
+        # Headers
+        header_frame = ctk.CTkFrame(goal_frame, fg_color="#d3d3d3")
+        header_frame.pack(fill="x")
+
+        step_label = ctk.CTkLabel(header_frame, text="Step to take", font=("Arial", 14, "bold"))
+        step_label.pack(side="left", fill="x", expand=True)
+
+        deadline_label = ctk.CTkLabel(header_frame, text="Deadline", font=("Arial", 14, "bold"), anchor="e")
+        deadline_label.pack(side="right", fill="x", expand=True)
+
+        # Rows for steps
+        for _ in range(3):
+            row = ctk.CTkFrame(goal_frame, fg_color="#d3d3d3")
+            row.pack(fill="x", pady=2)
+            step_entry = ctk.CTkEntry(row, placeholder_text="Enter step")
+            step_entry.pack(side="left", fill="x", expand=True, padx=5)
+            deadline_entry = ctk.CTkEntry(row, placeholder_text="Deadline")
+            deadline_entry.pack(side="right", fill="x", expand=True, padx=5)
 
 def run_app():
     global app

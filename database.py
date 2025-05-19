@@ -2,93 +2,56 @@ import sqlite3
 
 def create_connection():
     conn = sqlite3.connect('mydatabase.db')
+    conn.execute("PRAGMA foreign_keys = ON")
     return conn
 
 def create_tables():
-    conn = create_connection()
-    cursor = conn.cursor()
+    with create_connection() as conn:
+        cursor = conn.cursor()
 
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT NOT NULL UNIQUE,
-            email TEXT UNIQUE,
-            password TEXT NOT NULL
-        )
-    ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT NOT NULL UNIQUE,
+                email TEXT UNIQUE,
+                password TEXT NOT NULL
+            )
+        ''')
 
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS goals (
-<<<<<<< HEAD
-        goal TEXT NOT NULL UNIQUE,
-	    due_date TEXT NOT NULL UNIQUE,
-	    description TEXT UNIQUE,
-	    goal_id	INTEGER PRIMARY KEY AUTOINCREMENT,
-	    user_id	INTEGER NOT NULL,
-	    FOREIGN KEY(user_id) REFERENCES users(id)
-        )
-    ''')
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS habits (
-        habit_id INTEGER PRIMARY KEY AUTOINCREMENT,
-	    description	TEXT NOT NULL UNIQUE,
-	    habit_name	TEXT NOT NULL UNIQUE,
-	    user_id	INTEGER NOT NULL UNIQUE,
-	    FOREIGN KEY(user_id) REFERENCES users(id)
-        )
-    ''')
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS timers (
-        task_id	INTEGER PRIMARY KEY AUTOINCREMENT,
-	    task TEXT NOT NULL UNIQUE,
-	    start_time	TEXT NOT NULL,
-	    end_time TEXT NOT NULL,
-	    duration INTEGER NOT NULL,
-	    completed INTEGER NOT NULL DEFAULT 1,
-        user_id INTEGER NOT NULL UNIQUE
-        FOREIGN KEY(user_id) REFERENCES users(id)           
-=======
-            goal TEXT NOT NULL,
-            due_date DATE NOT NULL,
-            description TEXT,
-            goal_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
-            FOREIGN KEY(user_id) REFERENCES users(id)
-        )
-    ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS goals (
+                goal TEXT NOT NULL,
+                due_date DATE NOT NULL,
+                description TEXT,
+                goal_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                FOREIGN KEY(user_id) REFERENCES users(id)
+            )
+        ''')
 
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS habits (
-            habit_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            description TEXT NOT NULL,
-            habit_name TEXT NOT NULL,
-            user_id INTEGER NOT NULL,
-            FOREIGN KEY(user_id) REFERENCES users(id)
-        )
-    ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS habits (
+                habit_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                description TEXT NOT NULL,
+                habit_name TEXT NOT NULL,
+                user_id INTEGER NOT NULL,
+                FOREIGN KEY(user_id) REFERENCES users(id)
+            )
+        ''')
 
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS timers (
-            task_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            task TEXT NOT NULL,
-            start_time INTEGER NOT NULL,
-            end_time INTEGER NOT NULL,
-            duration INTEGER NOT NULL,
-            completed INTEGER NOT NULL DEFAULT 1,
-            user_id INTEGER NOT NULL,
-            FOREIGN KEY(user_id) REFERENCES users(id)
->>>>>>> b28d83939d1ec9666ed2e15b94397b0e43d04f8b
-        )
-    ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS timer_modes (
+                mode_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                mode_name TEXT NOT NULL,
+                focus_duration INTEGER NOT NULL,
+                rest_duration INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                FOREIGN KEY(user_id) REFERENCES users(id)
+            )
+        ''')
 
-    conn.commit()
-    conn.close()
+        conn.commit()
     print("Database and tables created successfully.")
 
-<<<<<<< HEAD
-    if __name__ == '__main__':
-        create_tables()
-=======
 if __name__ == '__main__':
     create_tables()
->>>>>>> b28d83939d1ec9666ed2e15b94397b0e43d04f8b
