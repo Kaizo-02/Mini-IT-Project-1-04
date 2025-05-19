@@ -1,6 +1,6 @@
 import customtkinter as ctk
 from pomodorocoding import PomodoroApp
-from models import add_user, get_users, add_goal, get_goals, add_habit, get_habits, add_timers, timers, user_exists, save_timer_mode, load_timer_modes
+from models import add_user, get_users, add_goal, get_goals, add_habit, get_habits, add_timers, user_exists, save_timer_mode, load_timer_modes
 from argon2 import PasswordHasher
 from tkinter import messagebox
 from datetime import datetime
