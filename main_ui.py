@@ -8,6 +8,8 @@ from tkinter import messagebox
 from datetime import datetime
 import sqlite3
 
+#for safwan's laptop use username: safwan , password: 123. <3 ---
+
 ph = PasswordHasher()
 
 e1, e2, e3 = None, None, None
