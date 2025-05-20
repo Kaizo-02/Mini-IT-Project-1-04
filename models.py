@@ -125,6 +125,28 @@ def load_timer_modes(user_id: int):
     except Exception as e:
         print("Error loading timer modes:", e)
         return {}
+    
+def save_user_settings(user_id, background_color, font_family, font_size):
+    with create_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT OR REPLACE INTO settings (user_id, background_color, font_family, font_size)
+            VALUES (?, ?, ?, ?)
+        ''', (user_id, background_color, font_family, font_size))
+        conn.commit()
+
+def load_user_settings(user_id):
+    with create_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT background_color, font_family, font_size FROM settings WHERE user_id = ?
+        ''', (user_id,))
+        settings = cursor.fetchone()
+        if settings:
+            return settings
+        else:
+            # Default settings if no settings found
+            return ("white", "Inter", 12)
 
 
 

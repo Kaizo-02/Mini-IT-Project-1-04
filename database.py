@@ -50,6 +50,16 @@ def create_tables():
             )
         ''')
 
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS settings (
+                user_id INTEGER PRIMARY KEY,
+                background_color TEXT NOT NULL,
+                font_family TEXT NOT NULL,
+                font_size INTEGER NOT NULL,
+                FOREIGN KEY(user_id) REFERENCES users(id)
+            )
+        ''')
+
         conn.commit()
     print("Database and tables created successfully.")
 
