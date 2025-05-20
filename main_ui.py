@@ -729,11 +729,7 @@ def show_main(user_id):
             controller.font_family = new_font
             controller.font_size = new_font_size
 
-            # Apply the selected font to current Settings widgets
-            # Update the settings page itself
-            # Re-render current page to apply new fonts
-            # This is a more robust way to ensure font changes propagate
-            # to elements on the *currently displayed* page.
+        
             settings_page(main_area, user_id, header, title, sidebar, title_frame)
 
             # Apply to header and sidebar (if they exist and are correct instances)
@@ -743,7 +739,7 @@ def show_main(user_id):
                 if isinstance(widget, ctk.CTkButton): # Only reconfigure buttons
                     widget.configure(font=ctk.CTkFont(family=new_font, size=new_font_size))
 
-            # Save to DB
+            
             save_user_settings(user_id, background_color=controller.background_color, font_family=new_font, font_size=new_font_size)
 
             messagebox.showinfo("Settings Applied", f"Font: {new_font}, Size: {new_font_size}")
