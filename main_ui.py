@@ -341,7 +341,7 @@ def show_main(user_id):
         def save_goal():
             g, d, due = goal_entry.get().strip(), desc_entry.get().strip(), due_entry.get().strip()
             if g and d and due:
-                # Basic date format validation (YYYY-MM-DD)
+                
                 try:
                     datetime.strptime(due, '%Y-%m-%d')
                 except ValueError:
