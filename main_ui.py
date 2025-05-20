@@ -280,7 +280,7 @@ def show_main(user_id):
         show_login()
 
     def switch_account():
-        # Allow the user to switch to another account (logout and show login screen)
+        # Allow the user to switch to another account (logout and show login screen) -thx to arif n naim
         logout()
 
     def goal_planner(main_area, user_id):
