@@ -8,8 +8,6 @@ from tkinter import messagebox
 from datetime import datetime
 import sqlite3
 
-#for safwan's laptop use username: safwan , password: 123. <3 ---
-
 ph = PasswordHasher()
 
 e1, e2, e3 = None, None, None
@@ -282,7 +280,7 @@ def show_main(user_id):
         show_login()
 
     def switch_account():
-        # Allow the user to switch to another account (logout and show login screen) -thx to arif n naim
+        # Allow the user to switch to another account (logout and show login screen)
         logout()
 
     def goal_planner(main_area, user_id):
@@ -343,7 +341,7 @@ def show_main(user_id):
         def save_goal():
             g, d, due = goal_entry.get().strip(), desc_entry.get().strip(), due_entry.get().strip()
             if g and d and due:
-                
+                # Basic date format validation (YYYY-MM-DD)
                 try:
                     datetime.strptime(due, '%Y-%m-%d')
                 except ValueError:
@@ -368,6 +366,7 @@ def show_main(user_id):
 
         display_goals()  # Initially show goals after setting up the UI
 
+#--------------------------------------------------------------HABIT BUILDER PAGE-------------------------------------------------------------
     def habit_builder_page(main_content, user_id):
         for widget in main_content.winfo_children():
             widget.destroy()
@@ -731,7 +730,11 @@ def show_main(user_id):
             controller.font_family = new_font
             controller.font_size = new_font_size
 
-        
+            # Apply the selected font to current Settings widgets
+            # Update the settings page itself
+            # Re-render current page to apply new fonts
+            # This is a more robust way to ensure font changes propagate
+            # to elements on the *currently displayed* page.
             settings_page(main_area, user_id, header, title, sidebar, title_frame)
 
             # Apply to header and sidebar (if they exist and are correct instances)
@@ -741,7 +744,7 @@ def show_main(user_id):
                 if isinstance(widget, ctk.CTkButton): # Only reconfigure buttons
                     widget.configure(font=ctk.CTkFont(family=new_font, size=new_font_size))
 
-            
+            # Save to DB
             save_user_settings(user_id, background_color=controller.background_color, font_family=new_font, font_size=new_font_size)
 
             messagebox.showinfo("Settings Applied", f"Font: {new_font}, Size: {new_font_size}")
