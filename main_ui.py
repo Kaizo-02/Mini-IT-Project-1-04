@@ -151,27 +151,103 @@ def show_main(user_id):
         # Show the login screen again to allow the user to switch accounts
         show_login()
 
-    # Function to switch the account (logout and show login screen)
+    def select_account(user_id, popup):
+        print(f"Switched to user_id: {user_id}")
+        popup.destroy()
+    # Replace with your actual login switch, e.g., show_main(user_id)
+
     def switch_account():
-        logout() 
+        users = get_users()  # fetch from database
+
+        popup = ctk.CTkToplevel(app)
+        popup.title("Switch Account")
+        popup.geometry("300x300")
+        popup.attributes('-topmost', True)
+
+        ctk.CTkLabel(popup, text="Choose an account", font=("Arial", 16, "bold")).pack(pady=10)
+
+        if not users:
+            ctk.CTkLabel(popup, text="No accounts found.", font=("Arial", 14)).pack(pady=20)
+            return
+
+        for user in users:
+            user_id, username, *_ = user
+            btn = ctk.CTkButton(
+                popup,
+                text=username,
+                command=lambda uid=user_id: select_account(uid, popup),
+                fg_color="#F5F5F5", text_color="black", hover_color="#DDD"
+            )
+            btn.pack(pady=5, fill="x", padx=20)
 
     def toggle_menu():
         if hasattr(toggle_menu, "menu") and toggle_menu.menu.winfo_exists():
             if toggle_menu.menu.winfo_ismapped():
-                toggle_menu.menu.place_forget()
+                hide_menu()  # If the menu is visible, hide it
             else:
-                toggle_menu.menu.place(x=850, y=55)  # adjust as needed
+                place_menu()  # If the menu is hidden, show it
         else:
-            show_menu()
+            show_menu()  # If the menu does not exist, create and show it
+
+    def hide_menu():
+        if hasattr(toggle_menu, "menu") and toggle_menu.menu.winfo_ismapped():
+            print("Hiding menu")
+            toggle_menu.menu.place_forget()  # Hide the menu when it's mapped
+
+    def place_menu():
+        # Get the current window width
+        window_width = app.winfo_width()
+
+        if window_width < 900:  # If the window is minimized or small, place at x=450, y=55
+            print("Placing menu at x=450, y=55 for minimized window")
+            toggle_menu.menu.place(x=450, y=55)
+        else:  # If the window is maximized, place at x=1390, y=55
+            print("Placing menu at x=1390, y=55 for maximized window")
+            toggle_menu.menu.place(x=1390, y=55)
 
     def show_menu():
         menu = ctk.CTkFrame(app, fg_color="white", width=150, height=100, corner_radius=10)
-        menu.place(x=850, y=55)
+
+        window_width = app.winfo_width()
+
+        # If window is minimized (small)
+        if window_width < 900:
+            print("Placing menu at x=450, y=55 for minimized window")
+            menu.place(x=450, y=55)
+        else:  # If window is maximized (large)
+            print("Placing menu at x=1390, y=55 for maximized window")
+            menu.place(x=1390, y=55)
 
         ctk.CTkButton(menu, text="Logout", command=logout, fg_color="transparent", text_color="black").pack(pady=5)
-        ctk.CTkButton(menu, text="Switch Account", command=switch_account, fg_color="transparent", text_color="black").pack(pady=5)
+        
+        # Frame to hold account list, initially hidden
+        accounts_frame = ctk.CTkFrame(menu, fg_color="white")
+        accounts_frame.pack(fill="x", padx=10, pady=5)
+        accounts_frame.pack_forget()  # hide initially
 
-        toggle_menu.menu = menu  # store menu so we can toggle it
+        def toggle_accounts():
+            if accounts_frame.winfo_ismapped():
+                accounts_frame.pack_forget()
+            else:
+                accounts_frame.pack(fill="x", padx=10, pady=5)
+
+        switch_btn = ctk.CTkButton(menu, text="Switch Profile ▼", command=toggle_accounts, fg_color="transparent", text_color="black")
+        switch_btn.pack(pady=5)
+
+        # Populate accounts but don't show yet
+        users = get_users()
+        for user in users:
+            user_id, username, *_ = user
+            ctk.CTkButton(
+                accounts_frame,
+                text=username,
+                command=lambda uid=user_id: (menu.destroy(), show_main(uid)),
+                fg_color="#F5F5F5", text_color="black", hover_color="#DDD"
+            ).pack(fill="x", pady=2)
+
+        app.bind("<Configure>", lambda e: place_menu())
+
+        toggle_menu.menu = menu
 
     # Profile Button
     profile_btn = ctk.CTkButton(
@@ -681,10 +757,11 @@ def run_app():
 
     app = ctk.CTk()
     app.title("IMPROVE - MAKE LIFE BETTER")
-    app.geometry("1000x700")
+    app.geometry("600x400")
     app.resizable(True, True)
     show_login()
     app.mainloop()
+    
 
 run_app()
 
