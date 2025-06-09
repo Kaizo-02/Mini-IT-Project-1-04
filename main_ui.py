@@ -2,7 +2,7 @@ import customtkinter as ctk
 import tkinter as tk
 from tkinter import colorchooser
 from pomodorocoding import PomodoroApp
-from models import add_user, get_users, add_goal, get_goals, add_habit, get_habits, add_timers, user_exists, save_timer_mode, load_timer_modes, load_user_settings, save_user_settings
+from models import set_last_user, clear_last_user, get_last_user, add_user, get_users, add_goal, get_goals, add_habit, get_habits, add_timers, user_exists, save_timer_mode, load_timer_modes, load_user_settings, save_user_settings
 from argon2 import PasswordHasher
 from tkinter import messagebox
 from datetime import datetime
@@ -17,12 +17,12 @@ main_bg_color = ["white"]
 main_font_family = ["Inter"]
 main_font_size = [12]
 
+current_user_id = [None]  # Using list to make it mutable inside nested functions
+
 def logout():
-    # Clear the main window to logout the user
-    for widget in app.winfo_children():
-        widget.destroy()
-    
-    # Show the login screen again to allow the user to switch accounts
+    clear_last_user()
+    for w in app.winfo_children():
+        w.destroy()
     show_login()
 
 def clear_placeholder(event, entry, placeholder, is_password=False):
@@ -46,14 +46,24 @@ def login():
     for user in users:
         if username == user[1]:
             try:
+                # Verifying the password
                 ph.verify(user[3], password)
                 print("Login successful!")
+                
+                # Mark this user as the last logged in
+                set_last_user(user[0])
+                
+                # Show the main page for the user
                 show_main(user[0])
                 return
-            except:
-                print("Password verification failed.")
+            except Exception as e:
+                print(f"Password verification failed: {e}")
+                messagebox.showerror("Error", "Incorrect password")
                 return
+
+    # If username is not found
     print("User not found.")
+    messagebox.showerror("Error", "User not found")
 
 def save_user():
     username = e1.get()
@@ -93,7 +103,7 @@ def show_login():
                   fg_color="#FF5722", text_color="white", font=("Arial", 14, "bold")).pack(pady=5)
 
 # ----------------------------------------------------------------CODE UNTUK REGISTER----------------------------------------------------------------
-def show_register():
+def show_register(user_id=None):
     for widget in app.winfo_children():
         widget.destroy()
 
@@ -121,8 +131,17 @@ def show_register():
 
     ctk.CTkButton(app, text="Register", command=save_user,
                   fg_color="#FF5722", text_color="white", font=("Arial", 14, "bold")).pack(pady=15)
-    ctk.CTkButton(app, text="Back to Login", command=show_login,
-                  fg_color="#FF5722", text_color="white", font=("Arial", 14, "bold")).pack(pady=5)
+
+    # Cancel Button improvement - Go back to the last user if exists, else show login
+    ctk.CTkButton(
+        app,
+        text="Cancel",
+        command=lambda: (
+            # Go back to last_user if exists, otherwise to login
+            (lambda last: show_main(last[0]) if last else show_login())(get_last_user())
+        ),
+        fg_color="#FF5722", text_color="white",
+    ).pack(pady=5)
 
 # ----------------------------------------------------------------CODE UNTUK MAIN PAGE----------------------------------------------------------------
 
@@ -234,6 +253,9 @@ def show_main(user_id):
         switch_btn = ctk.CTkButton(menu, text="Switch Profile ▼", command=toggle_accounts, fg_color="transparent", text_color="black")
         switch_btn.pack(pady=5)
 
+        ctk.CTkButton(menu, text="➕ Register New", command=lambda: show_register(user_id), fg_color="transparent", text_color="black").pack(pady=5)
+
+
         # Populate accounts but don't show yet
         users = get_users()
         for user in users:
@@ -252,7 +274,7 @@ def show_main(user_id):
     # Profile Button
     profile_btn = ctk.CTkButton(
         header, text="👤", width=40, height=40,
-        fg_color="gray", text_color="white", command=toggle_menu
+        fg_color="white", text_color="black", command=toggle_menu
     )
     profile_btn.pack(side="right", padx=10, pady=10)
 
@@ -264,7 +286,7 @@ def show_main(user_id):
     title_frame = ctk.CTkFrame(header, fg_color=background_color)  # Frame around the title (changes background)
     title_frame.pack(side="left", padx=10, pady=10)
 
-    title = ctk.CTkLabel(title_frame, text="IMPROVE - MAKE LIFE BETTER", font=ctk.CTkFont(size=20, weight="bold"), text_color="white")  # Apply color to title label
+    title = ctk.CTkLabel(title_frame, text="IMPROVE - MAKE LIFE BETTER", font=ctk.CTkFont(size=20, weight="bold"), text_color="black")  # Apply color to title label
     title.pack(pady=10, padx=10)
 
     # Sidebar with background color applied
@@ -273,11 +295,11 @@ def show_main(user_id):
     sidebar.pack_propagate(False)  # Prevent sidebar from resizing itself
 
     # Add sidebar buttons with the same background color
-    ctk.CTkButton(sidebar, text="Home Page", command=lambda: go_to_home(main_area), fg_color=background_color, text_color="white").pack(pady=10, fill="x", padx=10)
-    ctk.CTkButton(sidebar, text="Goal Planner", command=lambda: goal_planner(main_area, user_id), fg_color=background_color, text_color="white").pack(pady=10, fill="x", padx=10)
-    ctk.CTkButton(sidebar, text="Habit Builder", command=lambda: habit_builder_page(main_area, user_id), fg_color=background_color, text_color="white").pack(pady=10, fill="x", padx=10)
-    ctk.CTkButton(sidebar, text="Pomodoro Timer", command=lambda: pomodoro_timer_page(main_area, user_id), fg_color=background_color, text_color="white").pack(pady=10, fill="x", padx=10)
-    ctk.CTkButton(sidebar, text="Settings", command=lambda: settings_page(main_area, user_id, header, title, sidebar), fg_color=background_color, text_color="white").pack(pady=10, fill="x", padx=10)
+    ctk.CTkButton(sidebar, text="Home Page", command=lambda: go_to_home(main_area), fg_color=background_color, text_color="black").pack(pady=10, fill="x", padx=10)
+    ctk.CTkButton(sidebar, text="Goal Planner", command=lambda: goal_planner(main_area, user_id), fg_color=background_color, text_color="black").pack(pady=10, fill="x", padx=10)
+    ctk.CTkButton(sidebar, text="Habit Builder", command=lambda: habit_builder_page(main_area, user_id), fg_color=background_color, text_color="black").pack(pady=10, fill="x", padx=10)
+    ctk.CTkButton(sidebar, text="Pomodoro Timer", command=lambda: pomodoro_timer_page(main_area, user_id), fg_color=background_color, text_color="black").pack(pady=10, fill="x", padx=10)
+    ctk.CTkButton(sidebar, text="Settings", command=lambda: settings_page(main_area, user_id, header, title, sidebar), fg_color=background_color, text_color="black").pack(pady=10, fill="x", padx=10)
 
     # Main content area (right section)
     main_area = ctk.CTkFrame(wrapper, fg_color="white")
@@ -759,7 +781,14 @@ def run_app():
     app.title("IMPROVE - MAKE LIFE BETTER")
     app.geometry("600x400")
     app.resizable(True, True)
-    show_login()
+
+    # check DB for last_user
+    last = get_last_user()
+    if last:
+        show_main(last[0])
+    else:
+        show_login()
+
     app.mainloop()
     
 
