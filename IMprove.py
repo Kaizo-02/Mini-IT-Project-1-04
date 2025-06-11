@@ -1,38 +1,10 @@
 import customtkinter as ctk
 from tkinter import messagebox, colorchooser
-from database import add_goal, get_goals, add_user, get_users, create_connection, get_habits, add_habit, load_timer_modes, add_timers, save_timer_mode , delete_goal_from_db
+from database import add_goal, get_goals, add_user, get_users, create_connection, get_habits, add_habit, load_timer_modes, add_timers, save_timer_mode , delete_goal_from_db , update_goal, complete_goal, get_active_goals_count, get_habits_tracked_count, get_pomodoro_sessions_count, get_total_time_tracked, format_seconds_to_hm
 from tkcalendar import Calendar
 from argon2 import PasswordHasher
 from datetime import datetime
-import requests
-
-goals_data = []
-goal_id_counter = [1]
-
-def get_goals_func(user_id):
-    return [(g["id"], g["user_id"], g["title"], g["description"], g["deadline"]) for g in goals_data if g["user_id"] == user_id]
-
-def add_goal_func(user_id, title, description, deadline):
-    goals_data.append({
-        "id": goal_id_counter[0],
-        "user_id": user_id,
-        "title": title,
-        "description": description,
-        "deadline": deadline
-    })
-    goal_id_counter[0] += 1
-
-def update_goal_func(goal_id, title, description, deadline):
-    for g in goals_data:
-        if g["id"] == goal_id:
-            g["title"] = title
-            g["description"] = description
-            g["deadline"] = deadline
-            break
-
-def delete_goal_func(goal_id):
-    global goals_data
-    goals_data = [g for g in goals_data if g["id"] != goal_id]
+from typing import List, Dict, Optional, Callable
 
 def load_user_settings(user_id):
  return "#FF5733", "Inter", 12
@@ -155,8 +127,18 @@ def show_register():
                   fg_color="#FF5722", text_color="white", font=("Arial", 14, "bold")).pack(pady=15)
     ctk.CTkButton(app, text="Back to Login", command=show_login,
                   fg_color="#FF5722", text_color="white", font=("Arial", 14, "bold")).pack(pady=5)
-
+    
 # ----------------------------------------------------------------CODE UNTUK MAIN PAGE----------------------------------------------------------------
+def get_greeting():
+    """ Personal Greeting Based on Time of Day """
+    current_hour = datetime.now().hour
+    if current_hour < 12:
+        return "Good Morning"
+    elif 12 <= current_hour < 18:
+        return "Good Afternoon"
+    else:
+        return "Good Evening"
+
 
 def show_main(user_id):
     global app
@@ -292,78 +274,51 @@ def show_main(user_id):
         for widget in main_area.winfo_children():
             widget.destroy()
 
+    # Function to show the home page
 def create_homepage(main_area, user_id):
+    """ Create a simple dashboard on the homepage with key stats and navigation buttons. """
+    
+    # Clear all widgets from the main area
     for widget in main_area.winfo_children():
         widget.destroy()
 
-    welcome_label = ctk.CTkLabel(main_area, text=f"Welcome back, User {user_id}!", font=ctk.CTkFont(size=28, weight="bold"))
-    welcome_label.pack(pady=(30,10))
+    # Add a greeting message
+    greeting_label = ctk.CTkLabel(main_area, text=f"{get_greeting()}, User {user_id}!", font=ctk.CTkFont(size=28, weight="bold"))
+    greeting_label.pack(pady=(30, 10))
 
-    quote_text = "“Believe in yourself and all that you are. Know that there is something inside you that is greater than any obstacle.”"
-    quote_label = ctk.CTkLabel(main_area, text=quote_text, font=ctk.CTkFont(size=18, slant="italic"), text_color="#555", wraplength=700, justify="center")
-    quote_label.pack(pady=(0,30), padx=50)
+    # Add a subtitle
+    ctk.CTkLabel(main_area, text="Welcome to your personalized dashboard!", font=ctk.CTkFont(size=18)).pack(pady=(0, 20))
 
-    summary_frame = ctk.CTkFrame(main_area)
-    summary_frame.pack(pady=10, padx=30, fill="x")
+    # Create the dashboard frame
+    dashboard_frame = ctk.CTkFrame(main_area, fg_color="white", corner_radius=15)
+    dashboard_frame.pack(pady=20, padx=50, fill="x", expand=True)
 
-    goals_count = len(get_goals_func(user_id))
-    habits_count = 4
-    pomodoro_sessions = 2
+    active_goals_count = get_active_goals_count(user_id)
+    habits_tracked_count = get_habits_tracked_count(user_id)
+    pomodoro_sessions_count = get_pomodoro_sessions_count(user_id)
+    total_time_tracked_seconds = get_total_time_tracked(user_id)
+    total_time_tracked_formatted = format_seconds_to_hm(total_time_tracked_seconds)
 
-    # Create summary frame to hold cards
-    summary_frame = ctk.CTkFrame(main_area, fg_color="#2d1f1f", corner_radius=25)
-    summary_frame.pack(pady=30, padx=50, fill="x")
-
-    # Example usage with your data
-    create_stat_card(summary_frame, "Active Goals", goals_count)
-    create_stat_card(summary_frame, "Habits Tracked", habits_count)
-    create_stat_card(summary_frame, "Pomodoro Sessions", pomodoro_sessions)
+    # Add the statistics
+    create_stat_card(dashboard_frame, "Active Goals", active_goals_count)
+    create_stat_card(dashboard_frame, "Habits Tracked", habits_tracked_count)
+    create_stat_card(dashboard_frame, "Pomodoro Sessions", pomodoro_sessions_count)
+    create_stat_card(dashboard_frame, "Total Time Tracked", total_time_tracked_formatted)
 
 def create_stat_card(parent, title, value):
-    # Create a frame with a subtle gradient effect (using 2 layered frames)
-    outer_frame = ctk.CTkFrame(parent, corner_radius=20, fg_color=None)
-    outer_frame.pack(side="left", padx=25, pady=15)
+    """ Create a stat card for the dashboard showing key statistics. """
+    
+    # Create a card frame
+    card = ctk.CTkFrame(parent, fg_color="#FF5733", border_width=2, border_color="#d94f2d", corner_radius=10)
+    card.pack(fill="both", expand=True, padx=10, pady=5)
 
-    card = ctk.CTkFrame(outer_frame, width=220, height=120, corner_radius=20, fg_color="#FF5733", border_width=2, border_color="#d94f2d")
-    card.pack(fill="both", expand=True)
-
-    ctk.CTkLabel(card, text=title, font=ctk.CTkFont(size=18, weight="bold"), text_color="white").pack(pady=(25, 8))
+    # Create stat card content
+    ctk.CTkLabel(card, text=title, font=ctk.CTkFont(size=18, weight="bold"), text_color="white").pack(pady=25)
     ctk.CTkLabel(card, text=str(value), font=ctk.CTkFont(size=38, weight="bold"), text_color="#FFF8E1").pack()
 
-def create_homepage(main_area, user_id):
-    for w in main_area.winfo_children():
-        w.destroy()
-    welcome_label = ctk.CTkLabel(main_area, text=f"Welcome back, User {user_id}!", font=ctk.CTkFont(size=28, weight="bold"))
-    welcome_label.pack(pady=(30,10))
-    quote_text = "“Believe in yourself and all that you are. Know that there is something inside you that is greater than any obstacle.”"
-    quote_label = ctk.CTkLabel(main_area, text=quote_text, font=ctk.CTkFont(size=18, slant="italic"), text_color="#555", wraplength=700, justify="center")
-    quote_label.pack(pady=(0,30), padx=50)
-    summary_frame = ctk.CTkFrame(main_area)
-    summary_frame.pack(pady=10, padx=30, fill="x")
-    goals_count = len(get_goals_func(user_id))
-    habits_count = 4
-    pomodoro_sessions = 2
-
-    # Create summary frame to hold cards
-    summary_frame = ctk.CTkFrame(main_area, fg_color="#2d1f1f", corner_radius=25)
-    summary_frame.pack(pady=30, padx=50, fill="x")
-
-    # Example usage with your data
-    create_stat_card(summary_frame, "Active Goals", goals_count)
-    create_stat_card(summary_frame, "Habits Tracked", habits_count)
-    create_stat_card(summary_frame, "Pomodoro Sessions", pomodoro_sessions)
-
-    # Button frame with improved style and spacing
-    btn_frame = ctk.CTkFrame(main_area, fg_color=None)
-    btn_frame.pack(pady=50)
-
-def create_nav_button(parent, text, icon, command):
-    btn = ctk.CTkButton(parent, text=f"{icon}  {text}", width=200, height=65,
-                        fg_color="#FF5733", hover_color="#e14e3c",
-                        text_color="white", font=ctk.CTkFont(size=22, weight="bold"),
-                        corner_radius=30, command=command)
-    btn.pack(side="left", padx=30)
-    return btn
+    # Add hover effect on the card
+    card.bind("<Enter>", lambda e, btn=card: card.configure(fg_color="#FF6F60"))
+    card.bind("<Leave>", lambda e, btn=card: card.configure(fg_color="#FF5733"))
 
     def logout():
         # Clear the main window to logout the user
@@ -391,17 +346,44 @@ def add_placeholder(entry, placeholder, is_password=False):
         if is_password:
             entry.configure(show="")
 
+def create_stat_card(parent, title, value):
+    """ Create Stat Cards for the Homepage with Hover Effect """
+    card = ctk.CTkFrame(parent, fg_color="#FF5733", border_width=2, border_color="#d94f2d", corner_radius=10)
+    card.pack(fill="both", expand=True, padx=10, pady=5)
+
+    # Add hover effect to the card
+    card.bind("<Enter>", lambda e, btn=card: card.configure(fg_color="#FF6F60"))
+    card.bind("<Leave>", lambda e, btn=card: card.configure(fg_color="#FF5733"))
+
+    ctk.CTkLabel(card, text=title, font=ctk.CTkFont(size=18, weight="bold"), text_color="white").pack(pady=25)
+    ctk.CTkLabel(card, text=str(value), font=ctk.CTkFont(size=38, weight="bold"), text_color="#FFF8E1").pack()
+
 #-----------------------------------------------------------------CODE UNTUK Goal planner----------------------------------------------------------------
 
-def open_calendar_popup(entry):
+def get_goals_func(user_id: int) -> List[Dict]:
+    return get_goals(user_id)
+
+def add_goal_func(user_id: int, goal_text: str, description: Optional[str], due_date_str: str) -> Optional[int]:
+    return add_goal(user_id, goal_text, description, due_date_str)
+
+def update_goal_func(goal_id: int, user_id: int, goal_text: str, description: Optional[str], due_date_str: str) -> bool:
+    return update_goal(goal_id, user_id, goal_text, description, due_date_str)
+
+def delete_goal_func(goal_id: int) -> bool:
+    return delete_goal_from_db(goal_id)
+
+def complete_goal_func(goal_id: int) -> bool:
+    return complete_goal(goal_id)
+
+def open_calendar_popup(entry: ctk.CTkEntry):
     def set_date():
-        date = cal.get_date()
+        selected_date = cal.get_date()
         entry.delete(0, ctk.END)
-        entry.insert(0, date)
+        entry.insert(0, selected_date)
         popup.destroy()
 
     popup = ctk.CTkToplevel()
-    popup.title("Select Deadline")
+    popup.title("Select Due Date")
     popup.geometry("300x300")
     popup.transient(entry.master)
     popup.grab_set()
@@ -409,34 +391,59 @@ def open_calendar_popup(entry):
     popup.protocol("WM_DELETE_WINDOW", popup.destroy)
     popup.resizable(False, False)
 
-    cal = Calendar(popup, selectmode='day', date_pattern='yyyy-mm-dd')
+    try:
+        initial_date = datetime.strptime(entry.get(), "%Y-%m-%d").date()
+    except (ValueError, TypeError):
+        initial_date = datetime.now().date()
+
+    cal = Calendar(popup, selectmode='day', date_pattern='yyyy-mm-dd',
+                   year=initial_date.year, month=initial_date.month, day=initial_date.day)
     cal.pack(pady=20)
     select_btn = ctk.CTkButton(popup, text="Select Date", command=set_date)
     select_btn.pack(pady=10)
 
-def create_goal_card(parent, goal, on_edit, on_delete, on_complete):
+def create_goal_card(parent: ctk.CTkFrame, goal_data: Dict, on_edit: Callable, on_delete: Callable, on_complete: Callable):
     card = ctk.CTkFrame(parent, fg_color="#f0f0f0", corner_radius=10, border_width=1, border_color="#ccc")
-    card.pack(fill="x", padx=20, pady=8)
+    card.pack(fill="x", padx=10, pady=5)
 
-    title_label = ctk.CTkLabel(card, text=goal["title"], font=ctk.CTkFont(size=18, weight="bold"), anchor="w")
+    title_label = ctk.CTkLabel(card, text=goal_data["goal"], font=ctk.CTkFont(size=18, weight="bold"), anchor="w")
     title_label.pack(side="top", fill="x", padx=10, pady=(10, 0))
 
-    desc_label = ctk.CTkLabel(card, text=goal.get("description", ""), font=ctk.CTkFont(size=14), anchor="w", text_color="#555")
-    desc_label.pack(side="top", fill="x", padx=10, pady=(0, 5))
+    description_text = goal_data.get("description")
+    if description_text:
+        desc_label = ctk.CTkLabel(card, text=description_text, font=ctk.CTkFont(size=14), anchor="w", text_color="#555")
+        desc_label.pack(side="top", fill="x", padx=10, pady=(0, 5))
 
-    deadline_label = ctk.CTkLabel(card, text=f"Deadline: {goal.get('deadline', 'N/A')}", font=ctk.CTkFont(size=14), anchor="w", text_color="#AA0000")
+    status = goal_data.get('status', 'due')
+    due_date_text = goal_data.get('due_date', 'N/A')
+
+    date_info_text = f"Due: {due_date_text}"
+    status_color = "#4CAF50"
+    if status == "overdue":
+        status_color = "#D32F2F"
+    elif status == "due":
+        status_color = "#FF9800"
+
+    deadline_label = ctk.CTkLabel(card, text=f"{date_info_text} ({status.capitalize()})",
+                                  font=ctk.CTkFont(size=14, weight="bold" if status != "complete" else "normal"),
+                                  anchor="w", text_color=status_color)
     deadline_label.pack(side="top", fill="x", padx=10, pady=(0, 10))
 
     btn_frame = ctk.CTkFrame(card, fg_color="transparent")
     btn_frame.pack(side="bottom", fill="x", padx=10, pady=(0, 10))
 
-    complete_btn = ctk.CTkButton(btn_frame, text="✔ Complete", width=100, fg_color="#4CAF50", command=lambda: on_complete(goal))
+    complete_btn = ctk.CTkButton(btn_frame, text="✔ Complete", width=100, fg_color="#4CAF50",
+                                 command=lambda: on_complete(goal_data["goal_id"]))
+    if status == "complete":
+        complete_btn.configure(state="disabled", text="Completed")
     complete_btn.pack(side="left", padx=5)
 
-    edit_btn = ctk.CTkButton(btn_frame, text="✎ Edit", width=80, fg_color="#2196F3", command=lambda: on_edit(goal))
+    edit_btn = ctk.CTkButton(btn_frame, text="✎ Edit", width=80, fg_color="#2196F3",
+                             command=lambda: on_edit(goal_data))
     edit_btn.pack(side="left", padx=5)
 
-    delete_btn = ctk.CTkButton(btn_frame, text="🗑 Delete", width=80, fg_color="#f44336", command=lambda: on_delete(goal))
+    delete_btn = ctk.CTkButton(btn_frame, text="🗑 Delete", width=80, fg_color="#f44336",
+                               command=lambda: on_delete(goal_data["goal_id"]))
     delete_btn.pack(side="right", padx=5)
 
     return card
@@ -445,77 +452,97 @@ def goal_planner(main_area, user_id, get_goals_func, add_goal_func, update_goal_
     for widget in main_area.winfo_children():
         widget.destroy()
 
-    ctk.CTkLabel(main_area, text="Goal Planner", font=ctk.CTkFont(size=30, weight="bold")).pack(pady=15)
+    ctk.CTkLabel(main_area, text="🎯 Goal Planner", font=ctk.CTkFont(size=30, weight="bold")).pack(pady=15)
 
-    goals_container = ctk.CTkScrollableFrame(main_area, height=400)
+    goals_container = ctk.CTkScrollableFrame(main_area, height=400, fg_color="transparent")
     goals_container.pack(fill="both", expand=True, padx=20, pady=10)
 
-    def on_edit(goal):
+    def on_edit_goal_ui(goal_data: Dict):
         popup = ctk.CTkToplevel()
         popup.title("Edit Goal")
-        popup.geometry("400x350")
+        popup.geometry("400x380")
         popup.transient(main_area)
+        popup.grab_set()
+        popup.focus_set()
+        popup.protocol("WM_DELETE_WINDOW", popup.destroy)
 
-        scroll_frame = ctk.CTkScrollableFrame(popup)
+        scroll_frame = ctk.CTkScrollableFrame(popup, fg_color="transparent")
         scroll_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
-        ctk.CTkLabel(scroll_frame, text="Title:").pack(pady=(20,5))
+        ctk.CTkLabel(scroll_frame, text="Goal Title:").pack(pady=(20,5))
         title_entry = ctk.CTkEntry(scroll_frame)
-        title_entry.insert(0, goal["title"])
+        title_entry.insert(0, goal_data["goal"])
         title_entry.pack(pady=5, fill="x", padx=20)
 
         ctk.CTkLabel(scroll_frame, text="Description:").pack(pady=(10,5))
         desc_entry = ctk.CTkEntry(scroll_frame)
-        desc_entry.insert(0, goal["description"])
+        desc_entry.insert(0, goal_data.get("description", ""))
         desc_entry.pack(pady=5, fill="x", padx=20)
 
-        ctk.CTkLabel(scroll_frame, text="Deadline:").pack(pady=(10,5))
-        deadline_entry = ctk.CTkEntry(scroll_frame)
-        deadline_entry.insert(0, goal["deadline"])
-        deadline_entry.pack(pady=5, fill="x", padx=20)
+        ctk.CTkLabel(scroll_frame, text="Due Date (YYYY-MM-DD):").pack(pady=(10,5))
+        due_date_entry = ctk.CTkEntry(scroll_frame)
+        due_date_entry.insert(0, goal_data["due_date"])
+        due_date_entry.pack(pady=5, fill="x", padx=20)
 
-        cal_btn = ctk.CTkButton(scroll_frame, text="📅 Pick Date", command=lambda: open_calendar_popup(deadline_entry))
+        cal_btn = ctk.CTkButton(scroll_frame, text="📅 Pick Date", command=lambda: open_calendar_popup(due_date_entry))
         cal_btn.pack(pady=10)
 
         def save_edit():
             new_title = title_entry.get().strip()
             new_desc = desc_entry.get().strip()
-            new_deadline = deadline_entry.get().strip()
+            new_due_date = due_date_entry.get().strip()
+
             if not new_title:
-                messagebox.showerror("Error", "Title cannot be empty.")
+                messagebox.showerror("Validation Error", "Goal title cannot be empty.")
                 return
-            update_goal_func(goal["id"], new_title, new_desc, new_deadline)
-            popup.destroy()
-            refresh_goals()
+            if not new_due_date:
+                messagebox.showerror("Validation Error", "Due date cannot be empty.")
+                return
+            try:
+                datetime.strptime(new_due_date, "%Y-%m-%d")
+            except ValueError:
+                messagebox.showerror("Validation Error", "Invalid due date format. Please use 'YYYY-MM-DD'.")
+                return
+
+            if update_goal_func(goal_data["goal_id"], user_id, new_title, new_desc, new_due_date):
+                messagebox.showinfo("Success", "Goal updated successfully!")
+                popup.destroy()
+                refresh_goals_display()
+            else:
+                messagebox.showerror("Database Error", "Failed to update goal.")
 
         save_btn = ctk.CTkButton(scroll_frame, text="Save Changes", command=save_edit, fg_color="#4CAF50")
         save_btn.pack(pady=20)
 
-    def on_delete(goal):
-        confirm = messagebox.askyesno("Delete Goal", f"Are you sure you want to delete '{goal['title']}'?")
+    def on_delete_goal_ui(goal_id: int):
+        confirm = messagebox.askyesno("Confirm Delete", "Are you sure you want to delete this goal?")
         if confirm:
-            delete_goal_func(goal["id"])
-            refresh_goals()
+            delete_goal_func(goal_id)
+            messagebox.showinfo("Success", "Goal deleted successfully!")
+            refresh_goals_display()
 
-    def on_complete(goal):
-        confirm = messagebox.askyesno("Complete Goal", f"Mark '{goal['title']}' as complete?")
+    def on_complete_goal_ui(goal_id: int):
+        confirm = messagebox.askyesno("Confirm Completion", "Mark this goal as complete?")
         if confirm:
-            delete_goal_func(goal["id"])
-            refresh_goals()
+            if complete_goal_func(goal_id):
+                messagebox.showinfo("Success", "Goal marked as complete!")
+                refresh_goals_display()
+            else:
+                messagebox.showerror("Database Error", "Failed to complete goal.")
 
-    def refresh_goals():
+    def refresh_goals_display():
         for child in goals_container.winfo_children():
             child.destroy()
 
         goals = get_goals_func(user_id)
-        for g in goals:
-            goal_dict = {
-                "id": g[0],
-                "title": g[2],
-                "description": g[3],
-                "deadline": g[4]
-            }
-            create_goal_card(goals_container, goal_dict, on_edit, on_delete, on_complete)
+
+        if not goals:
+            ctk.CTkLabel(goals_container, text="No goals added yet. Start planning!", text_color="#777",
+                         font=ctk.CTkFont(size=16)).pack(pady=50)
+            return
+
+        for goal_data in goals:
+            create_goal_card(goals_container, goal_data, on_edit_goal_ui, on_delete_goal_ui, on_complete_goal_ui)
 
     create_frame = ctk.CTkFrame(main_area)
     create_frame.pack(fill="x", padx=20, pady=15)
@@ -523,36 +550,53 @@ def goal_planner(main_area, user_id, get_goals_func, add_goal_func, update_goal_
     title_entry = ctk.CTkEntry(create_frame, placeholder_text="Goal Title")
     title_entry.grid(row=0, column=0, padx=5, pady=5, sticky="ew")
 
-    desc_entry = ctk.CTkEntry(create_frame, placeholder_text="Goal Description")
+    desc_entry = ctk.CTkEntry(create_frame, placeholder_text="Goal Description (Optional)")
     desc_entry.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
 
-    deadline_entry = ctk.CTkEntry(create_frame, placeholder_text="Deadline (YYYY-MM-DD)")
-    deadline_entry.grid(row=0, column=2, padx=5, pady=5, sticky="ew")
+    due_date_entry = ctk.CTkEntry(create_frame, placeholder_text="Due Date (YYYY-MM-DD)")
+    due_date_entry.grid(row=0, column=2, padx=5, pady=5, sticky="ew")
 
-    cal_btn = ctk.CTkButton(create_frame, text="📅", width=40, command=lambda: open_calendar_popup(deadline_entry))
+    cal_btn = ctk.CTkButton(create_frame, text="📅", width=40, command=lambda: open_calendar_popup(due_date_entry))
     cal_btn.grid(row=0, column=3, padx=5, pady=5)
 
     create_frame.grid_columnconfigure(0, weight=3)
     create_frame.grid_columnconfigure(1, weight=4)
     create_frame.grid_columnconfigure(2, weight=2)
+    create_frame.grid_columnconfigure(3, weight=0)
+    create_frame.grid_columnconfigure(4, weight=1)
 
     def add_new_goal():
         title = title_entry.get().strip()
         desc = desc_entry.get().strip()
-        deadline = deadline_entry.get().strip()
+        due_date = due_date_entry.get().strip()
+
         if not title:
-            messagebox.showerror("Error", "Goal Title cannot be empty!")
+            messagebox.showerror("Validation Error", "Goal Title cannot be empty!")
             return
-        add_goal_func(user_id, title, desc, deadline)
+        if not due_date:
+            messagebox.showerror("Validation Error", "Due Date cannot be empty!")
+            return
+        try:
+            datetime.strptime(due_date, "%Y-%m-%d")
+        except ValueError:
+            messagebox.showerror("Validation Error", "Invalid due date format. Please use 'YYYY-MM-DD'.")
+            return
+
+        add_goal_func(user_id, title, desc, due_date)
+        messagebox.showinfo("Success", f"Goal '{title}' added successfully!")
         title_entry.delete(0, ctk.END)
         desc_entry.delete(0, ctk.END)
-        deadline_entry.delete(0, ctk.END)
-        refresh_goals()
+        due_date_entry.delete(0, ctk.END)
+        refresh_btn = ctk.CTkButton(create_frame, text="🔄 Refresh Goals", command=refresh_goals_display, fg_color="#2196F3"
+                                )
+        refresh_goals_display()
 
-    add_btn = ctk.CTkButton(create_frame, text="Add Goal", command=add_new_goal, fg_color="#4CAF50")
+    
+
+
+    add_btn = ctk.CTkButton(create_frame, text="➕ Add Goal", command=add_new_goal, fg_color="#4CAF50")
     add_btn.grid(row=0, column=4, padx=10, pady=5)
-
-    refresh_goals()
+    refresh_goals_display()
 #-----------------------------------------------------------------CODE UNTUK Habit builder----------------------------------------------------------------
 
 def habit_builder_page(main_content, user_id):
@@ -641,6 +685,8 @@ def habit_builder_page(main_content, user_id):
         habit_list_frame.pack(fill="both", expand=True)
 
         draw_habits()
+
+#-----------------------------------------------------------------CODE UNTUK Pomodoro timer----------------------------------------------------------------
 
 def pomodoro_timer_page(main_content, user_id):
         for widget in main_content.winfo_children():
@@ -769,6 +815,8 @@ def pomodoro_timer_page(main_content, user_id):
 
             ctk.CTkButton(popup, text="Save Timer", command=save_custom).pack(pady=20)
 
+        
+
         top_frame = ctk.CTkFrame(main_content, fg_color="transparent")
         top_frame.pack(anchor="nw", padx=20, pady=10)
 
@@ -807,38 +855,6 @@ def pomodoro_timer_page(main_content, user_id):
 
         _update_session_label()
 
-def goal_planner_page(master, color, placeholder):
-        goal_frame = ctk.CTkFrame(master, fg_color="#d3d3d3")
-        goal_frame.pack(fill="x", pady=10)
-
-        # Goal input
-        goal_entry_frame = ctk.CTkFrame(goal_frame, fg_color=color)
-        goal_entry_frame.pack(fill="x")
-
-        goal_entry_label = ctk.CTkLabel(goal_entry_frame, text="Goal:", font=("Arial", 18, "bold"), text_color="black")
-        goal_entry_label.pack(side="left", padx=10)
-
-        goal_input = ctk.CTkEntry(goal_entry_frame, placeholder_text=placeholder)
-        goal_input.pack(side="left", fill="x", expand=True, padx=5, pady=5)
-
-        # Headers
-        header_frame = ctk.CTkFrame(goal_frame, fg_color="#d3d3d3")
-        header_frame.pack(fill="x")
-
-        step_label = ctk.CTkLabel(header_frame, text="Step to take", font=("Arial", 14, "bold"))
-        step_label.pack(side="left", fill="x", expand=True)
-
-        deadline_label = ctk.CTkLabel(header_frame, text="Deadline", font=("Arial", 14, "bold"), anchor="e")
-        deadline_label.pack(side="right", fill="x", expand=True)
-
-        # Rows for steps
-        for _ in range(3):
-            row = ctk.CTkFrame(goal_frame, fg_color="#d3d3d3")
-            row.pack(fill="x", pady=2)
-            step_entry = ctk.CTkEntry(row, placeholder_text="Enter step")
-            step_entry.pack(side="left", fill="x", expand=True, padx=5)
-            deadline_entry = ctk.CTkEntry(row, placeholder_text="Deadline")
-            deadline_entry.pack(side="right", fill="x", expand=True, padx=5)
 
 def choose_color(header, sidebar, title_frame):
         # Open color picker dialog and get the selected color
@@ -904,25 +920,16 @@ def settings_page(main_area, user_id, header, title, sidebar, title_frame):
 
         ctk.CTkButton(main_area, text="Apply Settings", command=apply_settings).pack(pady=30)
 
-#------------------------------------------------------------------Daily quote ----------------------------------------------------------------
-
-def get_random_quote():
-    # URL for the 'Quote of the Day' API
-    url = "https://quotes.rest/qod"
-    
-    # Send a GET request to the API
-    try:
-        response = requests.get(url)
-        response.raise_for_status()  # Check if request was successful
-        data = response.json()  # Parse the response JSON
-        
-        # Extract the quote from the JSON response
-        quote = data['contents']['quotes'][0]['quote']
-        return quote
-    except requests.exceptions.RequestException as e:
-        print(f"Error fetching quote: {e}")
-        return "Error fetching quote. Please try again later."
-
+#------------------------------------------------------------------Run app ----------------------------------------------------------------
+def get_greeting():
+    """ Returns a greeting based on the current time of day. """
+    hour = datetime.now().hour
+    if hour < 12:
+        return "Good Morning"
+    elif hour < 18:
+        return "Good Afternoon"
+    else:
+        return "Good Evening"
 def run_app():
     global app
     ctk.set_appearance_mode("light")
