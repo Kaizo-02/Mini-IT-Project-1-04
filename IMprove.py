@@ -7,6 +7,27 @@ from datetime import datetime, timedelta
 from typing import List, Dict, Optional, Callable
 import random
 
+#-----------------------------------------------------------------CODE UNTUK QUOTES----------------------------------------------------------------
+
+QUOTES = [
+    "“Believe in yourself and all that you are. Know that there is something inside you that is greater than any obstacle.”",
+    "“The only way to do great work is to love what you do.” – Steve Jobs",
+    "“Strive not to be a success, but rather to be of value.” – Albert Einstein",
+    "“The mind is everything. What you think you become.” – Buddha",
+    "“The best way to predict the future is to create it.” – Peter Drucker",
+    "“Success is not final, failure is not fatal: it is the courage to continue that counts.” – Winston S. Churchill",
+    "“It always seems impossible until it’s done.” – Nelson Mandela",
+    "“What you get by achieving your goals is not as important as what you become by achieving your goals.” – Zig Ziglar",
+    "“The future belongs to those who believe in the beauty of their dreams.” – Eleanor Roosevelt",
+    "“The greatest glory in living lies not in never falling, but in rising every time we fall.” – Nelson Mandela",
+    "“The way to get started is to quit talking and begin doing.” – Walt Disney",
+    "“If you look at what you have in life, you'll always have more. If you look at what you don't have in life, you'll never have enough.” – Oprah Winfrey",
+    "“If you set your goals ridiculously high and it's a failure, you will fail above everyone else's success.” – James Cameron",
+    "“You may be disappointed if you fail, but you are doomed if you don't try.” – Beverly Sills",
+        "“Life is what happens when you’re busy making other plans.” – John Lennon"
+]       
+        
+#-----------------------------------------------------------------CODE UNTUK SETTINGS----------------------------------------------------------------
 def load_user_settings(user_id):
  return "#FF5733", "Inter", 12
 
@@ -128,89 +149,7 @@ def show_register():
                   fg_color="#FF5722", text_color="white", font=("Arial", 14, "bold")).pack(pady=15)
     ctk.CTkButton(app, text="Back to Login", command=show_login,
                   fg_color="#FF5722", text_color="white", font=("Arial", 14, "bold")).pack(pady=5)
-
-#----------------------------------------------------------------CODE UNTUK Quotes----------------------------------------------------------------
-QUOTES = [
-    "“Believe in yourself and all that you are. Know that there is something inside you that is greater than any obstacle.”",
-    "“The only way to do great work is to love what you do.” – Steve Jobs",
-    "“Strive not to be a success, but rather to be of value.” – Albert Einstein",
-    "“The mind is everything. What you think you become.” – Buddha",
-    "“The best way to predict the future is to create it.” – Peter Drucker",
-    "“Success is not final, failure is not fatal: it is the courage to continue that counts.” – Winston S. Churchill",
-    "“It always seems impossible until it’s done.” – Nelson Mandela",
-    "“What you get by achieving your goals is not as important as what you become by achieving your goals.” – Zig Ziglar",
-    "“The future belongs to those who believe in the beauty of their dreams.” – Eleanor Roosevelt",
-    "“The greatest glory in living lies not in never falling, but in rising every time we fall.” – Nelson Mandela",
-    "“The way to get started is to quit talking and begin doing.” – Walt Disney",
-    "“If you look at what you have in life, you'll always have more. If you look at what you don't have in life, you'll never have enough.” – Oprah Winfrey",
-    "“If you set your goals ridiculously high and it's a failure, you will fail above everyone else's success.” – James Cameron",
-    "“You may be disappointed if you fail, but you are doomed if you don't try.” – Beverly Sills",
-    "“Life is what happens when you’re busy making other plans.” – John Lennon"
-]
-
-QUOTE_DATA_FILE = "daily_quote_data.json" # File to store the last shown quote info
-
-def get_daily_quote():
-    """
-    Retrieves a motivational quote that refreshes daily.
-    It saves the last displayed quote's index and date to a JSON file.
-    """
-    today = datetime.now().date()
-    data = {"last_date": None, "quote_index": -1} # Default values
-
-    # Try to load existing data from file
-    try:
-        with open(QUOTE_DATA_FILE, 'r') as f:
-            loaded_data = json.load(f)
-            # Convert string date back to date object for comparison
-            data["last_date"] = datetime.strptime(loaded_data["last_date"], "%Y-%m-%d").date()
-            data["quote_index"] = loaded_data["quote_index"]
-    except (FileNotFoundError, json.JSONDecodeError):
-        # File not found or corrupted, proceed with default values (which will trigger a new quote)
-        pass 
     
-    selected_quote_index = data["quote_index"]
-
-    # Check if it's a new day or if no quote has been selected yet
-    if data["last_date"] is None or data["last_date"] < today:
-        # It's a new day or first run, pick a new random quote
-        # Ensure the new quote is different from the previous one if possible and there are multiple quotes
-        if len(QUOTES) > 1 and selected_quote_index != -1:
-            new_index = selected_quote_index
-            while new_index == selected_quote_index:
-                new_index = random.randrange(len(QUOTES))
-            selected_quote_index = new_index
-        else:
-            selected_quote_index = random.randrange(len(QUOTES)) # Fallback for first run or single quote
-
-        # Save the new data to the file
-        try:
-            with open(QUOTE_DATA_FILE, 'w') as f:
-                json.dump({
-                    "last_date": today.strftime("%Y-%m-%d"), # Store date as string
-                    "quote_index": selected_quote_index
-                }, f)
-        except IOError as e:
-            print(f"Error saving quote data to file: {e}")
-            # If saving fails, still return the newly chosen random quote for this session
-            return QUOTES[selected_quote_index]
-    
-    # Ensure the retrieved index is valid (in case of manual file corruption)
-    if not (0 <= selected_quote_index < len(QUOTES)):
-        selected_quote_index = random.randrange(len(QUOTES))
-        # Attempt to re-save the corrected index
-        try:
-            with open(QUOTE_DATA_FILE, 'w') as f:
-                json.dump({
-                    "last_date": today.strftime("%Y-%m-%d"),
-                    "quote_index": selected_quote_index
-                }, f)
-        except IOError as e:
-            print(f"Error re-saving corrected quote data: {e}")
-
-
-    return QUOTES[selected_quote_index]
-
 # ----------------------------------------------------------------CODE UNTUK MAIN PAGE----------------------------------------------------------------
 
 def get_greeting(username): 
@@ -233,13 +172,12 @@ def show_main(user_id):
     quote_frame = ctk.CTkFrame(app)
     quote_frame.pack(fill="x", pady=10)  # Add some padding
     
-    daily_quote_text = get_daily_quote() # Get the quote that refreshes daily
-
-    motivational_quote = ctk.CTkLabel(quote_frame,
-                                      text=daily_quote_text, # Use the daily quote text here
-                                      font=(font_family, 14, "italic"), text_color="black")
+    random_quote = random.choice(QUOTES)
+    motivational_quote = ctk.CTkLabel(quote_frame, 
+                                      text=random_quote, 
+                                      font=("Arial", 18, "italic"), text_color="black")
     motivational_quote.pack(pady=10, padx=20)
-    
+
     # Load settings from the database
     background_color, font_family, font_size = load_user_settings(user_id)
 
@@ -1138,6 +1076,7 @@ def pomodoro_timer_page(main_content, user_id):
 
         _update_session_label()
 
+#-----------------------------------------------------------------CODE UNTUK Settings----------------------------------------------------------------
 
 def choose_color(header, sidebar, title_frame):
         # Open color picker dialog and get the selected color
