@@ -16,7 +16,8 @@ def create_tables():
                 username TEXT NOT NULL UNIQUE,
                 email TEXT UNIQUE,
                 password TEXT NOT NULL,
-                last_user INTEGER DEFAULT 0
+                last_user INTEGER DEFAULT 0,
+                active INTEGER DEFAULT 1
             )
         ''')
 
@@ -318,31 +319,22 @@ def delete_goal_from_db(goal_id):
     except Exception as e:
         print(f"Error deleting goal: {e}")
 
-def set_last_user(user_id: int):
-    """Mark this user as the one to auto-login next time."""
-    conn = create_connection()
-    cur = conn.cursor()
-    cur.execute("UPDATE users SET last_user = 0")                         # clear any old flags
-    cur.execute("UPDATE users SET last_user = 1 WHERE id = ?", (user_id,))
-    conn.commit()
-    conn.close()
-
-def clear_last_user():
-    """Remove any auto-login flag (used on explicit logout)."""
-    conn = create_connection()
-    cur = conn.cursor()
-    cur.execute("UPDATE users SET last_user = 0")
-    conn.commit()
-    conn.close()
-
 def get_last_user():
-    """Return the row for the user where last_user==1, or None."""
-    conn = create_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT * FROM users WHERE last_user = 1")
-    row = cur.fetchone()
-    conn.close()
-    return row
+    try:
+        with create_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM users WHERE last_user = 1 LIMIT 1")
+            user = cursor.fetchone()
+            if user:
+                print(f"Last user found: {user}")
+                return user
+            else:
+                print("No last logged-in user found.")
+                return None
+    except sqlite3.Error as e:
+        print(f"Error fetching last user: {e}")
+        return None
+
 
 def get_active_goals_count(user_id: int) -> int:
     conn = create_connection()
@@ -408,40 +400,64 @@ def format_seconds_to_hm(total_seconds: int) -> str:
     hours = total_seconds // 3600
     minutes = (total_seconds % 3600) // 60
     return f"{hours}h {minutes}m"
+    
+def get_next_user():
+    """ Get the next available user from the database. """
+    conn = create_connection()
+    cursor = conn.cursor()
 
-def add_profile(user_id, profile_name):
-    try:
-        conn = sqlite3.connect('mydatabase.db')
-        cursor = conn.cursor()
-        cursor.execute("INSERT INTO profiles (profile_name, user_id) VALUES (?, ?)", (profile_name, user_id))
-        conn.commit()
-        conn.close()
-    except Exception as e:
-        print(f"Error adding profile: {e}")
+    # Query to get the next user (the first available user in the database)
+    cursor.execute("SELECT id, username FROM users WHERE active = 1 LIMIT 1")
+    next_user = cursor.fetchone()
 
-# Function to set the last switched account's user_id
-def set_last_account(user_id):
-    try:
-        with create_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                INSERT OR REPLACE INTO settings (user_id)
-                VALUES (?)
-            """, (user_id,))
-            conn.commit()
-    except sqlite3.Error as e:
-        print(f"Error saving last switched account: {e}")
+    conn.close()
+    return next_user
 
-# Function to get the last switched account's user_id
-def get_last_account():
-    try:
-        with create_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT user_id FROM settings LIMIT 1")
-            return cursor.fetchone()  # Returns user_id
-    except sqlite3.Error as e:
-        print(f"Error fetching last switched account: {e}")
-        return None
+def clear_last_user():
+    """ Clear the 'last_user' flag for the currently logged-in user. """
+    conn = create_connection()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET last_user = 0 WHERE last_user = 1")
+    conn.commit()
+    conn.close()
+
+def set_last_user(user_id):
+    """ Mark a specific user as the last logged-in user. """
+    conn = create_connection()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET last_user = 1 WHERE id = ?", (user_id,))
+    conn.commit()
+    conn.close()
+
+def set_user_active(user_id: int, active: bool):
+    """Toggle whether a user shows up in the switch list."""
+    conn = create_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE users SET active = ? WHERE id = ?",
+        (1 if active else 0, user_id)
+    )
+    conn.commit()
+    conn.close()
+
+def get_active_users():
+    """
+    Return only users who are still active (i.e. not signed out).
+    """
+    conn = create_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM users WHERE active = 1")
+    users = cursor.fetchall()
+    conn.close()
+    return users
+
+def get_username_by_id(user_id: int) -> str:
+    conn = create_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT username FROM users WHERE id = ?", (user_id,))
+    row = cur.fetchone()
+    conn.close()
+    return row[0] if row else ""
 
 if __name__ == '__main__':
     create_tables()
