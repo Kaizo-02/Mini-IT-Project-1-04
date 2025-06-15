@@ -28,11 +28,6 @@ QUOTES = [
 ]       
         
 #-----------------------------------------------------------------CODE UNTUK SETTINGS----------------------------------------------------------------
-def load_user_settings(user_id):
- return "#FF5733", "Inter", 12
-
-def save_user_settings(user_id, background_color, font_family, font_size):
-    print(f"Settings saved for user {user_id}: color={background_color}, font={font_family}, size={font_size}")
 
 ph = PasswordHasher()
 
@@ -43,13 +38,41 @@ main_bg_color = ["#FF5733"]  # Set the red color for the header/sidebar
 main_font_family = ["Inter"]
 main_font_size = [12]
 
-def logout():
-    # Clear the main window to logout the user
-    for widget in app.winfo_children():
-        widget.destroy()
+current_user_id = None
+last_switched_account_id = None
 
-    # Show the login screen again to allow the user to switch accounts
-    show_login()
+def set_last_switched_account(user_id):
+    global current_user_id
+    current_user_id = user_id
+    print(f"Last switched account ID set to: {current_user_id}")
+
+def get_last_switched_account():
+    global current_user_id
+    return current_user_id
+
+def confirm_add_account():
+    """Ask the user if they really want to add a new account."""
+    if messagebox.askyesno("Add Account", "Do you want to add a new account?"):
+        show_register()
+
+def confirm_and_logout():
+    if not messagebox.askyesno("Sign Out", "Are you sure?"):
+        return
+
+    # deactivate the one who’s leaving
+    last = db.get_last_user()
+    if last:
+        db.set_user_active(last[0], False)
+        db.clear_last_user()
+
+    # pick up the next active one (if any)
+    nxt = db.get_next_user()
+    if nxt:
+        next_id, _ = nxt
+        db.set_last_user(next_id)
+        show_main(next_id)
+    else:
+        show_login()
 
 def clear_placeholder(event, entry, placeholder, is_password=False):
     if entry.get() == placeholder:
@@ -72,33 +95,59 @@ def login():
     for user in users:
         if username == user[1]:
             try:
+                # Verifying the password
                 ph.verify(user[3], password)
                 print("Login successful!")
-                show_main(user[0])
+                
+                user_id = user[0]
+                db.set_user_active(user_id, True)    # mark this user active
+                db.clear_last_user()                 # clear any old “last”
+                db.set_last_user(user_id)            # flag this one as the last_user
+                show_main(user_id)
                 return
-            except:
-                print("Password verification failed.")
+            except Exception as e:
+                print(f"Password verification failed: {e}")
+                messagebox.showerror("Error", "Incorrect password")
                 return
+
+    # If username is not found
     print("User not found.")
+    messagebox.showerror("Error", "User not found")
 
 def save_user():
-    username = e1.get()
-    email = e3.get()
-    password = e2.get()
+    username = e1.get().strip()
+    email    = e3.get().strip()
+    password = e2.get().strip()
+
+    # basic validation
+    if not username or not email or not password:
+        messagebox.showerror("Error", "All fields are required")
+        return
+
     try:
+        # hash & insert → assume add_user returns the new user_id
         hashed_password = ph.hash(password)
-        db.add_user(username, email, hashed_password)
-        print("User registered successfully!")
-        show_login()
+        new_id = db.add_user(username, email, hashed_password)
+
+        # mark this account active and as the 'last_user'
+        db.set_user_active(new_id, True)
+        db.clear_last_user()
+        db.set_last_user(new_id)
+
+        print(f"User {username} (id={new_id}) registered and logged in automatically")
+        show_main(new_id)
+
     except Exception as e:
         print(f"Error during registration: {e}")
+        messagebox.showerror("Error", "Registration failed. Please try again.")
 
 def show_login():
+    app.unbind("<Configure>")
     for widget in app.winfo_children():
         widget.destroy()
 
     ctk.CTkLabel(app, text="Welcome to IMPROVE", text_color="white",
-                 font=ctk.CTkFont(size=20, weight="bold"), height=50, fg_color="#FF5722").pack(fill="x")
+                 font=ctk.CTkFont(size=20, weight="bold"), height=50, fg_color="#22AEFF").pack(fill="x")
 
     global e1, e2
     e1 = ctk.CTkEntry(app, width=300, font=("Arial", 14))
@@ -114,17 +163,17 @@ def show_login():
     e2.bind("<FocusOut>", lambda e: add_placeholder(e2, "Your Password", True))
 
     ctk.CTkButton(app, text="Login", command=login,
-                  fg_color="#FF5722", text_color="white", font=("Arial", 14, "bold")).pack(pady=15)
-    ctk.CTkButton(app, text="Register", command=show_register,
-                  fg_color="#FF5722", text_color="white", font=("Arial", 14, "bold")).pack(pady=5)
+                  fg_color="#22AEFF", text_color="white", font=("Arial", 14, "bold")).pack(pady=15)
+    ctk.CTkButton(app, text="Sign Up", command=show_register,
+                  fg_color="#22AEFF", text_color="white", font=("Arial", 14, "bold")).pack(pady=5)
 
 # ----------------------------------------------------------------CODE UNTUK REGISTER----------------------------------------------------------------
-def show_register():
+def show_register(user_id=None):
     for widget in app.winfo_children():
         widget.destroy()
 
-    ctk.CTkLabel(app, text="Register for IMPROVE", text_color="white",
-                 font=ctk.CTkFont(size=20, weight="bold"), height=50, fg_color="#FF5722").pack(fill="x")
+    ctk.CTkLabel(app, text="Sign Up for IMPROVE", text_color="white",
+                 font=ctk.CTkFont(size=20, weight="bold"), height=50, fg_color="#22AEFF").pack(fill="x")
 
     global e1, e2, e3
     e1 = ctk.CTkEntry(app, width=300, font=("Arial", 14))
@@ -145,13 +194,12 @@ def show_register():
     e2.bind("<FocusIn>", lambda e: clear_placeholder(e, e2, "Choose a Password", True))
     e2.bind("<FocusOut>", lambda e: add_placeholder(e2, "Choose a Password", True))
 
-    ctk.CTkButton(app, text="Register", command=save_user,
-                  fg_color="#FF5722", text_color="white", font=("Arial", 14, "bold")).pack(pady=15)
-    ctk.CTkButton(app, text="Back to Login", command=show_login,
-                  fg_color="#FF5722", text_color="white", font=("Arial", 14, "bold")).pack(pady=5)
+    ctk.CTkButton(app, text="Sign Up", command=save_user,
+                  fg_color="#22AEFF", text_color="white", font=("Arial", 14, "bold")).pack(pady=15)
+    ctk.CTkButton(app, text="Login", command=show_login,
+                  fg_color="#22AEFF", text_color="white", font=("Arial", 14, "bold")).pack(pady=15)
     
 # ----------------------------------------------------------------CODE UNTUK MAIN PAGE----------------------------------------------------------------
-
 def get_greeting(username): 
     """Personal Greeting Based on Time of Day and Username"""
     current_hour = datetime.now().hour
@@ -168,6 +216,8 @@ def show_main(user_id):
     for widget in app.winfo_children():
         widget.destroy()
 
+    set_last_switched_account(user_id)
+
     # Add a motivational quote section
     quote_frame = ctk.CTkFrame(app)
     quote_frame.pack(fill="x", pady=10)  # Add some padding
@@ -179,59 +229,96 @@ def show_main(user_id):
     motivational_quote.pack(pady=10, padx=20)
 
     # Load settings from the database
-    background_color, font_family, font_size = load_user_settings(user_id)
+    background_color, font_family, font_size = db.load_user_settings(user_id)
 
     # Create a wrapper to hold header, sidebar, and main_area
     wrapper = ctk.CTkFrame(app)
     wrapper.pack(fill="both", expand=True)
 
     # Header with the background color applied
-    header = ctk.CTkFrame(wrapper, height=60, fg_color="#FF5733")  # Apply red background to header
+    header = ctk.CTkFrame(wrapper, height=60, fg_color=background_color)  # Apply red background to header
     header.pack(fill="x")
-
-    # Function to logout the user (clear main window and show the login screen)
-    def logout():
-        # Clear the main window to logout the user
-        for widget in app.winfo_children():
-            widget.destroy()
-
-        # Show the login screen again to allow the user to switch accounts
-        show_login()
-
-    # Function to switch the account (logout and show login screen)
-    def switch_account():
-        logout() 
 
     def toggle_menu():
         if hasattr(toggle_menu, "menu") and toggle_menu.menu.winfo_exists():
             if toggle_menu.menu.winfo_ismapped():
-                toggle_menu.menu.place_forget()
+                hide_menu()  # If the menu is visible, hide it
             else:
-                toggle_menu.menu.place(x=850, y=55)  # adjust as needed
+                place_menu()  # If the menu is hidden, show it
         else:
-            show_menu()
+            show_menu()  # If the menu does not exist, create and show it
+
+    def hide_menu():
+        if hasattr(toggle_menu, "menu") and toggle_menu.menu.winfo_ismapped():
+            print("Hiding menu")
+            toggle_menu.menu.place_forget()  # Hide the menu when it's mapped
+
+    def place_menu():
+            menu = getattr(toggle_menu, "menu", None)
+            if menu is None or not menu.winfo_exists():
+                return
+        # Get the current window width
+            window_width = app.winfo_width()
+
+            if window_width < 900:  # If the window is minimized or small, place at x=450, y=55
+                print("Placing menu at x=450, y=35 for minimized window")
+                toggle_menu.menu.place(x=450, y=123)
+            else:  # If the window is maximized, place at x=1390, y=55
+                print("Placing menu at x=1390, y=35 for maximized window")
+                toggle_menu.menu.place(x=1390, y=123)
 
     def show_menu():
         menu = ctk.CTkFrame(app, fg_color="white", width=150, height=100, corner_radius=10)
-        menu.place(x=850, y=55)
 
-        ctk.CTkButton(menu, text="Logout", command=logout, fg_color="transparent", text_color="black").pack(pady=5)
-        ctk.CTkButton(menu, text="Switch Account", command=switch_account, fg_color="transparent", text_color="black").pack(pady=5)
+        window_width = app.winfo_width()
 
-        toggle_menu.menu = menu  # store menu so we can toggle it
+        # If window is minimized (small)
+        if window_width < 900:
+            print("Placing menu at x=450, y=55 for minimized window")
+            menu.place(x=450, y=123)
+        else:  # If window is maximized (large)
+            print("Placing menu at x=1390, y=55 for maximized window")
+            menu.place(x=1390, y=123)
+        
+        # Frame to hold account list, initially hidden
+        accounts_frame = ctk.CTkFrame(menu, fg_color="white")
+        accounts_frame.pack(fill="x", padx=10, pady=5)
+        accounts_frame.pack_forget()  # hide initially
+
+        ctk.CTkButton(
+        menu,
+        text="➕ Add Account",
+        fg_color="#F5F5F5",
+        text_color="black",
+        command=lambda m=menu: (m.destroy(), confirm_add_account())
+    ).pack(pady=5)
+
+        ctk.CTkButton(
+        menu,
+        text="Sign Out",
+        fg_color="#F5F5F5",
+        text_color="black",
+        command=lambda m=menu: (m.destroy(), confirm_and_logout())
+    ).pack(pady=5) 
+
+        ctk.CTkButton(menu, text="Settings", command=lambda: settings_page(main_area, user_id, header, title, sidebar, title_frame), fg_color="#F5F5F5", text_color="black").pack(pady=5)
+
+        app.bind("<Configure>", lambda e: place_menu())
+
+        toggle_menu.menu = menu
 
     # Profile Button
     profile_btn = ctk.CTkButton(
         header, text="👤", width=40, height=40,
-        fg_color="gray", text_color="white", command=toggle_menu
+        fg_color="white", text_color="black", command=toggle_menu
     )
     profile_btn.pack(side="right", padx=10, pady=10)
 
     # Title with background color applied to title frame
-    title_frame = ctk.CTkFrame(header, fg_color="#FF5733")  # Apply red background to title frame
+    title_frame = ctk.CTkFrame(header, fg_color=background_color)  # Frame around the title (changes background)
     title_frame.pack(side="left", padx=10, pady=10)
 
-    title = ctk.CTkLabel(title_frame, text="IMPROVE - MAKE LIFE BETTER", font=ctk.CTkFont(size=20, weight="bold"), text_color="white")  # Apply color to title label
+    title = ctk.CTkLabel(title_frame, text="IMPROVE - MAKE LIFE BETTER", font=ctk.CTkFont(size=20, weight="bold"), text_color="black")  # Apply color to title label
     title.pack(pady=10, padx=10)
 
     # Sidebar with background color applied
@@ -240,25 +327,17 @@ def show_main(user_id):
     sidebar.pack_propagate(False)  # Prevent sidebar from resizing itself
 
     # Add sidebar buttons with the same background color and hover effect
-    def on_button_hover(event, button):
-        button.configure(fg_color="#FF6F60")  # Darken button on hover
-
-    def on_button_leave(event, button):
-        button.configure(fg_color="#FF5733")  # Reset color when hover leaves
-
     buttons = [
         ("Home Page", lambda: create_homepage(main_area, user_id)),
         ("Goal Planner", lambda: goal_planner(main_area, user_id, get_goals_func, add_goal_func, update_goal_func, delete_goal_func)),
         ("Habit Builder", lambda: habit_builder_page(main_area, user_id)),
         ("Pomodoro Timer", lambda: pomodoro_timer_page(main_area, user_id)),
-        ("Settings", lambda: settings_page(main_area, user_id, header, title, sidebar, title_frame)),
-    ]
+]
 
     for text, command in buttons:
-        button = ctk.CTkButton(sidebar, text=text, command=command, fg_color="#FF5733", text_color="Black", width=180)
+        # Setting the hover effect directly using hover_color
+        button = ctk.CTkButton(sidebar, text=text, command=command, fg_color=background_color, text_color="Black", width=180, hover_color="#B5B5BC")
         button.pack(pady=5, fill="x", padx=10)
-        button.bind("<Enter>", lambda e, btn=button: on_button_hover(e, btn))  # Hover effect
-        button.bind("<Leave>", lambda e, btn=button: on_button_leave(e, btn))  # Hover effect reset
 
     # Main content area (right section)
     main_area = ctk.CTkFrame(wrapper, fg_color="white")
@@ -268,8 +347,8 @@ def show_main(user_id):
     def clear_main_area():
         for widget in main_area.winfo_children():
             widget.destroy()
-            
-    create_homepage(main_area, user_id)  # Show the homepage by default
+
+    create_homepage(main_area, user_id) 
 
     # Function to show the home page
 def create_homepage(main_area, user_id):
@@ -818,7 +897,7 @@ def habit_builder_page(main_content, user_id):
     update_habits_data_model()
     draw_habits()
 
-#-----------------------------------------------------------------CODE UNTUK Pomodoro timer----------------------------------------------------------------
+   #-----------------------------------------------------------------CODE UNTUK Pomodoro timer----------------------------------------------------------------
 
 def pomodoro_timer_page(main_content, user_id):
         for widget in main_content.winfo_children():
@@ -1079,68 +1158,70 @@ def pomodoro_timer_page(main_content, user_id):
 #-----------------------------------------------------------------CODE UNTUK Settings----------------------------------------------------------------
 
 def choose_color(header, sidebar, title_frame):
-        # Open color picker dialog and get the selected color
-        color_code = colorchooser.askcolor(title="Choose Header/Sidebar Color")[1]
-        if color_code:  # If a color was selected
-            # Apply the selected color to the header, sidebar, and title_frame
-            header.configure(fg_color=color_code)
-            sidebar.configure(fg_color=color_code)
-            title_frame.configure(fg_color=color_code)
-            # Also change the color of the text box
-            for widget in sidebar.winfo_children():
-                widget.configure(fg_color=color_code)  # Change the color of the box around the text
+    # Open color picker dialog and get the selected color
+    color_code = colorchooser.askcolor(title="Choose Header/Sidebar Color")[1]
+    if color_code:  # If a color was selected
+        # Apply the selected color to the header and sidebar
+        header.configure(fg_color=color_code)
+        sidebar.configure(fg_color=color_code)
+        title_frame.configure(fg_color=color_code)
+        # Also change the color of the text box
+        for widget in sidebar.winfo_children():
+            widget.configure(fg_color=color_code)  # Change the color of the box around the text
 
-            # Optionally, save the color in settings or use it dynamically
-            print(f"Selected color: {color_code}")
-            return color_code
-        return None
+        # Optionally, save the color in settings or use it dynamically
+        print(f"Selected color: {color_code}")
+        return color_code
+    return None
 
 def settings_page(main_area, user_id, header, title, sidebar, title_frame):
-        # Clear all widgets from main_area
+        
+    def clear_main_area():
         for widget in main_area.winfo_children():
             widget.destroy()
 
-        ctk.CTkLabel(main_area, text="Settings", font=("Inter", 95, "bold"), text_color="black").pack(pady=40)
+    clear_main_area()
 
-        # Background Color Option: Open color picker for header/sidebar
-        def open_color_picker():
-            color_code = choose_color(header, sidebar, title_frame)  # Pass header, sidebar, and title_frame to choose_color
-            if color_code:
-                # Save the selected color in the database and global variable
-                save_user_settings(user_id, background_color=color_code, font_family=main_font_family[0], font_size=main_font_size[0])
+    ctk.CTkLabel(main_area, text="Settings", font=("Inter", 95, "bold"), text_color="black").pack(pady=40)
 
-        # Button to open color chooser dialog
-        ctk.CTkButton(main_area, text="Choose Header/Sidebar Color", command=open_color_picker).pack(pady=20)
+    # Background Color Option: Open color picker for header/sidebar
+    def open_color_picker():
+        color_code = choose_color(header, sidebar, title_frame)  # Pass header, sidebar, and title_frame to choose_color
+        if color_code:
+            # Save the selected color in the database and global variable
+            db.save_user_settings(user_id, background_color=color_code, font_family=main_font_family[0], font_size=main_font_size[0])
+    ctk.CTkButton(main_area, text="Choose Header/Sidebar Color", command=open_color_picker).pack(pady=20)
 
-        # Font Family Option
-        ctk.CTkLabel(main_area, text="Font Family:", font=("Inter", 40), text_color="#000000").pack(pady=10)
-        font_family_selector = ctk.CTkOptionMenu(main_area, values=["Inter", "Arial", "Courier", "Times"])
-        font_family_selector.pack(pady=10)
+    # Font Family Option
+    ctk.CTkLabel(main_area, text="Font Family:", font=("Inter", 40), text_color="#000000").pack(pady=10)
+    font_family_selector = ctk.CTkOptionMenu(main_area, values=["Inter", "Arial", "Courier", "Times"])
+    font_family_selector.pack(pady=10)
 
-        # Font Size Option
-        ctk.CTkLabel(main_area, text="Font Size:", font=("Inter", 40), text_color="#000000").pack(pady=10)
-        font_size_selector = ctk.CTkOptionMenu(main_area, values=["12", "16", "32", "64", "128"])
-        font_size_selector.pack(pady=10)
+    # Font Size Option
+    ctk.CTkLabel(main_area, text="Font Size:", font=("Inter", 40), text_color="#000000").pack(pady=10)
+    font_size_selector = ctk.CTkOptionMenu(main_area, values=["12", "16", "32", "64", "128"])
+    font_size_selector.pack(pady=10)
 
-        # Apply Settings Button
-        def apply_settings():
-            new_font = font_family_selector.get()
-            new_font_size = int(font_size_selector.get())
+    # Apply Settings Button
+    def apply_settings():
+        new_font = font_family_selector.get()
+        new_font_size = int(font_size_selector.get())
 
-            # Apply the selected font to header, title, sidebar, etc.
-            title.configure(font=ctk.CTkFont(family=new_font, size=new_font_size, weight="bold"))
-            for widget in sidebar.winfo_children():
-                widget.configure(font=ctk.CTkFont(family=new_font, size=new_font_size))
+        # Apply the selected font to header, title, sidebar, etc.
+        title.configure(font=ctk.CTkFont(family=new_font, size=new_font_size, weight="bold"))
+        for widget in sidebar.winfo_children():
+            widget.configure(font=ctk.CTkFont(family=new_font, size=new_font_size))
 
-            for widget in main_area.winfo_children():
-                widget.configure(font=ctk.CTkFont(family=new_font, size=new_font_size))
+        for widget in main_area.winfo_children():
+            widget.configure(font=ctk.CTkFont(family=new_font, size=new_font_size))
 
-            # Save the new settings in the database
-            save_user_settings(user_id, background_color=main_bg_color[0], font_family=new_font, font_size=new_font_size)
+        # Save the new settings in the database
+        db.save_user_settings(user_id, background_color=main_bg_color[0], font_family=new_font, font_size=new_font_size)
 
-            messagebox.showinfo("Settings Applied", f"Font: {new_font} {new_font_size}")
+        messagebox.showinfo("Settings Applied", f"Font: {new_font} {new_font_size}")
 
-        ctk.CTkButton(main_area, text="Apply Settings", command=apply_settings).pack(pady=30)
+    ctk.CTkButton(main_area, text="Apply Settings", command=apply_settings).pack(pady=30)
+
 
 #------------------------------------------------------------------Run app ----------------------------------------------------------------
 def run_app():
