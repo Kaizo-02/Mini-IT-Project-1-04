@@ -7,6 +7,9 @@ from argon2 import PasswordHasher
 from tkinter import messagebox
 from datetime import datetime
 import sqlite3
+from tkinter import filedialog
+from PIL import Image, ImageTk
+
 
 ph = PasswordHasher()
 
@@ -41,6 +44,21 @@ def add_placeholder(entry, placeholder, is_password=False):
         entry.insert(0, placeholder)
         if is_password:
             entry.configure(show="")
+
+def save_user_settings(user_id, background_color, font_family, font_size, background_image_path=None):
+    """
+    Placeholder function to save user settings.
+    In a real app, this would interact with a database or config file.
+    'background_image_path' is an optional argument.
+    """
+    print(f"Saving settings for user {user_id}:")
+    print(f"  Background Color: {background_color}")
+    print(f"  Font Family: {font_family}")
+    print(f"  Font Size: {font_size}")
+    if background_image_path:
+        print(f"  Background Image Path: {background_image_path}")
+    # Here, you would add your actual code to save these settings
+    # to a database, a JSON file, or another persistent storage.
 
 # ----------------------------------------------------------------CODE UNTUK LOGIN-----------------------------------------------------------------
 def login():
@@ -695,63 +713,124 @@ def show_main(user_id):
     def settings_page(main_area, user_id, header, title, sidebar, title_frame):
         clear_main_area()
 
-        ctk.CTkLabel(main_area, text="Settings", font=(controller.font_family, 95, "bold"), text_color="black").pack(pady=40)
+        # Settings Page Title
+        ctk.CTkLabel(main_area, text="Settings",
+                    font=(controller.font_family, 60, "bold"),
+                    text_color="black").pack(pady=20)
 
-        # Background Color Option: Open color picker for header/sidebar
-        def open_color_picker():
-            color_code = choose_color(header, sidebar, title_frame)  # Pass header, sidebar, and title_frame
-            if color_code:
-                # Save the selected color in the database
-                save_user_settings(user_id, background_color=color_code, font_family=controller.font_family, font_size=controller.font_size)
+        # Background Image Option
+        def choose_background_image():
+            filetypes = [
+                ("All image files", "*.png *.jpg *.jpeg *.bmp *.gif"),
+                ("PNG files", "*.png"),
+                ("JPEG files", "*.jpg *.jpeg"),
+                ("BMP files", "*.bmp"),
+                ("GIF files", "*.gif")
+                
+            ]
+            filepath = filedialog.askopenfilename(title="Choose Background Image", filetypes=filetypes)
+            if filepath:
+                try:
+                    img = Image.open(filepath)
 
-        # Button to open color chooser dialog
-        ctk.CTkButton(main_area, text="Choose Header/Sidebar Color", command=open_color_picker, font=(controller.font_family, controller.font_size, "bold")).pack(pady=20)
+                    current_width = main_area.winfo_width()
+                    current_height = main_area.winfo_height()
+
+                    if current_width == 1 and app.winfo_width() > 1:
+                        current_width = app.winfo_width()
+                    if current_height == 1 and app.winfo_height() > 1:
+                        current_height = app.winfo_height()
+
+                    current_width = max(10, current_width)
+                    current_height = max(10, current_height)
+
+                    img = img.resize((current_width, current_height), Image.LANCZOS)
+                    ctk_img = ctk.CTkImage(light_image=img, dark_image=img, size=(current_width, current_height))
+
+                    controller.background_img = ctk_img
+
+                    if not hasattr(controller, "bg_label") or not controller.bg_label or not controller.bg_label.winfo_exists():
+                        controller.bg_label = ctk.CTkLabel(main_area, text="", image=ctk_img)
+                        controller.bg_label.place(relx=0.5, rely=0.5, anchor="center", relwidth=1, relheight=1)
+                        controller.bg_label.lower()
+                    else:
+                        controller.bg_label.configure(image=ctk_img)
+
+                    controller.bg_label.image = ctk_img
+                    controller.current_bg_image_path = filepath # Store the path in controller
+
+                    # Call the global save_user_settings
+                    save_user_settings(user_id, background_color=controller.background_color,
+                                    font_family=controller.font_family, font_size=controller.font_size,
+                                    background_image_path=filepath)
+                except Exception as e:
+                    messagebox.showerror("Image Error", f"Failed to load or apply image: {e}")
+
+        ctk.CTkButton(main_area, text="Choose Background Image", command=choose_background_image,
+                    font=(controller.font_family, controller.font_size, "bold")).pack(pady=20)
+
+        # Background Color Option (for Header/Sidebar)
+        ctk.CTkButton(main_area, text="Choose Header/Sidebar Color", command=lambda: choose_color(header, sidebar, title_frame),
+                    font=(controller.font_family, controller.font_size, "bold")).pack(pady=20)
 
         # Font Family Option
-        ctk.CTkLabel(main_area, text="Font Family:", font=(controller.font_family, controller.font_size + 28), text_color="#000000").pack(pady=10)
-        font_family_var = ctk.StringVar(value=controller.font_family) # Define StringVar
-        font_family_selector = ctk.CTkOptionMenu(main_area, values=["Inter", "Arial", "Courier", "Times"],
-                                                 variable=font_family_var, font=(controller.font_family, controller.font_size))
+        ctk.CTkLabel(main_area, text="Font Family:",
+                    font=(controller.font_family, controller.font_size + 8),
+                    text_color="#000000").pack(pady=10)
+        font_family_var = ctk.StringVar(value=controller.font_family)
+        font_family_selector = ctk.CTkOptionMenu(main_area, values=["Inter", "Arial", "Courier New", "Times New Roman", "Verdana", "Helvetica"],
+                                                variable=font_family_var,
+                                                font=(controller.font_family, controller.font_size))
         font_family_selector.pack(pady=10)
 
         # Font Size Option
-        ctk.CTkLabel(main_area, text="Font Size:", font=(controller.font_family, controller.font_size + 28), text_color="#000000").pack(pady=10)
-        font_size_var = ctk.StringVar(value=str(controller.font_size)) # Define StringVar
-        font_size_selector = ctk.CTkOptionMenu(main_area, values=[str(s) for s in [12, 16, 32, 64, 128]],
-                                                variable=font_size_var, font=(controller.font_family, controller.font_size))
+        font_size_mapping = {
+            "Small": 12,
+            "Normal": 20,
+            "Large": 30,
+            "Extra Large": 40
+        }
+        reverse_mapping = {v: k for k, v in font_size_mapping.items()}
+        initial_label = reverse_mapping.get(controller.font_size, "Normal")
+        font_size_var = ctk.StringVar(value=initial_label)
+
+        ctk.CTkLabel(main_area, text="Font Size:",
+                    font=(controller.font_family, controller.font_size + 8),
+                    text_color="#000000").pack(pady=10)
+        font_size_selector = ctk.CTkOptionMenu(main_area, values=list(font_size_mapping.keys()),
+                                            variable=font_size_var,
+                                            font=(controller.font_family, controller.font_size))
         font_size_selector.pack(pady=10)
 
         # Apply Settings Button
         def apply_settings():
-            new_font = font_family_var.get()
-            new_font_size = int(font_size_var.get())
+            new_font_family = font_family_var.get()
+            new_font_size = font_size_mapping[font_size_var.get()]
 
             # Update controller settings
-            controller.font_family = new_font
+            controller.font_family = new_font_family
             controller.font_size = new_font_size
 
-            # Apply the selected font to current Settings widgets
-            # Update the settings page itself
-            # Re-render current page to apply new fonts
-            # This is a more robust way to ensure font changes propagate
-            # to elements on the *currently displayed* page.
-            settings_page(main_area, user_id, header, title, sidebar, title_frame)
+            # Apply to the 'title' label (assuming it's a CTkLabel)
+            title.configure(font=ctk.CTkFont(family=new_font_family, size=new_font_size, weight="bold"))
 
-            # Apply to header and sidebar (if they exist and are correct instances)
-            title.configure(font=ctk.CTkFont(family=new_font, size=new_font_size, weight="bold"))
             # Apply to sidebar buttons
             for widget in sidebar.winfo_children():
-                if isinstance(widget, ctk.CTkButton): # Only reconfigure buttons
-                    widget.configure(font=ctk.CTkFont(family=new_font, size=new_font_size))
+                if isinstance(widget, ctk.CTkButton):
+                    widget.configure(font=ctk.CTkFont(family=new_font_family, size=new_font_size))
 
-            # Save to DB
-            save_user_settings(user_id, background_color=controller.background_color, font_family=new_font, font_size=new_font_size)
+            # Re-render the current settings page to apply new fonts to its own widgets
+            settings_page(main_area, user_id, header, title, sidebar, title_frame)
 
-            messagebox.showinfo("Settings Applied", f"Font: {new_font}, Size: {new_font_size}")
+            # Call the global save_user_settings
+            save_user_settings(user_id, background_color=controller.background_color,
+                            font_family=new_font_family, font_size=new_font_size,
+                            background_image_path=controller.current_bg_image_path) # Pass the stored path
 
+            messagebox.showinfo("Settings Applied", f"Font: {new_font_family}, Size: {new_font_size}")
 
-        ctk.CTkButton(main_area, text="Apply Settings", command=apply_settings, font=(controller.font_family, controller.font_size, "bold")).pack(pady=30)
-
+        ctk.CTkButton(main_area, text="Apply Settings", command=apply_settings,
+                    font=(controller.font_family, controller.font_size, "bold")).pack(pady=30)
 def run_app():
     global app
     ctk.set_appearance_mode("dark")
