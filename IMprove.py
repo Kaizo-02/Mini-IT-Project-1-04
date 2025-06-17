@@ -716,7 +716,7 @@ def habit_builder_page(main_content, user_id):
         widget.destroy()
 
     raw_habits = db.get_habits(user_id)
-    all_completions = db.get_habit_completions(user_id)
+    all_completions = db.get_habit_completions(user_id) or []
     completion_map = {}
     for habit_id, comp_date_str in all_completions:
         if habit_id not in completion_map:
@@ -762,15 +762,19 @@ def habit_builder_page(main_content, user_id):
             habit_subtext = ctk.CTkLabel(habit_card, text=habit["description"], font=ctk.CTkFont(size=30), text_color="black")
             habit_subtext.pack(anchor="nw", padx=10, pady=(0, 10))
 
-            days_header_frame = ctk.CTkFrame(habit_card, fg_color="#d9d9d9")
-            days_header_frame.pack(anchor="nw", padx=10, pady=(0,0))
+           #modified day tracker to track the track track track bruh.
+            day_tracker_frame = ctk.CTkFrame(habit_card, fg_color="#d9d9d9")
+            day_tracker_frame.pack(anchor="nw", padx=10, pady=(0, 10))
+
+            # Fixed width for alignment
+            COL_WIDTH = 45
+
+            # Row for Day Names
             for i in range(7):
                 date_obj = datetime.now().date() - timedelta(days=6 - i)
                 day_name = date_obj.strftime('%a')
-                ctk.CTkLabel(days_header_frame, text=day_name, text_color="black", font=ctk.CTkFont(size=14)).pack(side="left", padx=10)
-
-            circle_frame = ctk.CTkFrame(habit_card, fg_color="#d9d9d9")
-            circle_frame.pack(anchor="nw", padx=10, pady=(0, 10))
+                ctk.CTkLabel(day_tracker_frame, text=day_name, text_color="black", font=ctk.CTkFont(size=14),
+                             width=COL_WIDTH).grid(row=0, column=i, padx=5) 
 
             def make_toggle_func(habit_id_val, date_str_val):
                 def toggle():
@@ -787,17 +791,21 @@ def habit_builder_page(main_content, user_id):
                     draw_habits()
                 return toggle
 
-            for date_str, is_complete in habit["days_completion"].items():
+            
+            col_idx = 0
+            
+            sorted_days_completion = sorted(habit["days_completion"].items())
+            for date_str, is_complete in sorted_days_completion:
                 color = "#28A745" if is_complete else "#d1b5b5"
                 if date_str == datetime.now().date().strftime('%Y-%m-%d'):
-                    ctk.CTkButton(circle_frame, text="", width=30, height=30, corner_radius=15, fg_color=color,
+                    ctk.CTkButton(day_tracker_frame, text="", width=30, height=30, corner_radius=15, fg_color=color,
                                   hover_color="#1E7E34" if not is_complete else "#7d6b6b",
-                                  command=make_toggle_func(habit["id"], date_str)).pack(side="left", padx=10)
+                                  command=make_toggle_func(habit["id"], date_str)).grid(row=1, column=col_idx, pady=5) # Use grid
                 else:
-                    # For previous days, show as disabled buttons (no toggle)
-                    ctk.CTkButton(circle_frame, text="", width=30, height=30, corner_radius=15, fg_color=color,
-                                  state="disabled").pack(side="left", padx=10)
-
+                    ctk.CTkButton(day_tracker_frame, text="", width=30, height=30, corner_radius=15, fg_color=color,
+                                  state="disabled").grid(row=1, column=col_idx, pady=5) # Use grid
+                col_idx += 1 
+           
 
 
             action_frame = ctk.CTkFrame(habit_card, fg_color="#d9d9d9")
@@ -821,7 +829,7 @@ def habit_builder_page(main_content, user_id):
         nonlocal habits_data_model
 
         raw_habits = db.get_habits(user_id)
-        all_completions = db.get_habit_completions(user_id)
+        all_completions = db.get_habit_completions(user_id) or []
         completion_map = {}
         for habit_id, comp_date_str in all_completions:
             if habit_id not in completion_map:
